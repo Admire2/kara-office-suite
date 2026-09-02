@@ -699,7 +699,7 @@ const downloadPdf = async (withDiy?: boolean) => {
       <WalletBar />
       <div className="max-w-3xl mx-auto">
         <Link href="/suite/engineering" className="text-cyan-400 hover:underline text-sm">&larr; Back to Engineering Suite</Link>
-        <h1 className="mt-4 text-3xl font-bold">🔧 Terra — AI Electronics & Hardware Engineer</h1>
+        <h1 className="mt-4 text-3xl font-bold">🔧 Terra — AI Civil & Structural Engineer</h1>
         <p className="mt-2 text-sm text-slate-400">Your Terra-styled copilot for foundations, beams, concrete, steel, wind/seismic loads and takeoffs. Ask like you would a senior engineer.</p>
         <p className="mt-1 text-xs text-slate-500">Flow: 01 Brief → 02 Plan → 03 Design → 04 Sheet & PDF → 05 Build with partners.</p>
 
