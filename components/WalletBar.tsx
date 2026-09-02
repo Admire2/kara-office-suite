@@ -20,7 +20,7 @@ export default function WalletBar() {
     (async () => {
       let em = "";
       try { const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!); const { data } = await sb.auth.getSession(); em = (data.session && data.session.user && data.session.user.email) || ""; if (em) setLoggedIn(true); } catch (e) {}
-      if (!em) { try { em = localStorage.getItem("fp_wallet_email") || localStorage.getItem("fp_lead_email") || ""; } catch (e) {} }
+      if (!em) { try { em = localStorage.getItem("fp_wallet_email") || ""; } catch (e) {} }
       if (em) { setEmail(em); refresh(em); }
     })();
   }, []);
