@@ -1,26 +1,14 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+html, body {
+  background-color: #020617;
+  color: #f8fafc;
+  color-scheme: dark;
 }
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* FounderPilot layout guard: nothing may overflow its card */
+form, input, button, select, textarea {
+  box-sizing: border-box;
+  max-width: 100%;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+button { transition: transform .08s ease, filter .08s ease; }
+button:active:not(:disabled) { transform: scale(.97); filter: brightness(1.2); }
