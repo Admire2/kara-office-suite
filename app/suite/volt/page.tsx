@@ -277,6 +277,59 @@ const scoreSuites = (q: any) => {
   return pct;
 };
 export default function VoltPage() {
+  // TASK-METER-LISTENER
+useEffect(() => {
+  const doCharge = async (cost: number, action: string) => {
+    try {
+      let em = "";
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i) || "";
+        if (k.startsWith("sb-") && k.endsWith("-auth-token")) {
+          const j = JSON.parse(localStorage.getItem(k) || "null");
+          em = (j && j.user && j.user.email) || (j && j.currentSession && j.currentSession.user && j.currentSession.user.email) || "";
+          if (em) break;
+        }
+      }
+      if (!em) { try { em = localStorage.getItem("fp_wallet_email") || ""; } catch (e) {} }
+      if (em) {
+        const r = await fetch("/api/credits", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, cost, action }) });
+        const j = await r.json();
+        if (j && j.newBalance !== undefined) window.dispatchEvent(new CustomEvent("wallet-updated", { detail: { balance: j.newBalance } }));
+      }
+    } catch (e) {}
+  };
+  const onClick = (e: MouseEvent) => {
+    const t = (e.target as HTMLElement).closest("button");
+    if (!t) return;
+    const txt = (t.textContent || "").toLowerCase();
+    if (txt.includes("start designing")) doCharge(15, "design");
+    else if (txt.includes("team plan")) doCharge(10, "team");
+    else if (txt.includes("generate report")) doCharge(5, "report");
+    else if (txt.includes("design review")) doCharge(10, "review");
+    else if (txt.includes("quick ask")) doCharge(2, "quick_ask");
+  };
+  document.addEventListener("click", onClick);
+  return () => document.removeEventListener("click", onClick);
+}, []);
+  const chargeAndRefresh = async (cost: number, action: string) => {
+  try {
+    let em = "";
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i) || "";
+      if (k.startsWith("sb-") && k.endsWith("-auth-token")) {
+        const j = JSON.parse(localStorage.getItem(k) || "null");
+        em = (j?.user?.email) || (j?.currentSession?.user?.email) || "";
+        if (em) break;
+      }
+    }
+    if (!em) em = localStorage.getItem("fp_wallet_email") || "";
+    if (em) {
+      const r = await fetch("/api/credits", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, cost, action }) });
+      const j = await r.json();
+      if (j.newBalance !== undefined) window.dispatchEvent(new CustomEvent("wallet-updated", { detail: { balance: j.newBalance } }));
+    }
+  } catch (e) { console.error("Charge failed:", e); }
+};
   useEffect(() => {
     const h = (e: any) => {
       const t = e.target && e.target.closest ? (e.target as any).closest("a,button") : null;
