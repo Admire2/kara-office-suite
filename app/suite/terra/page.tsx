@@ -277,6 +277,25 @@ const scoreSuites = (q: any) => {
   return pct;
 };
 export default function TerraPage() {
+  const chargeCredits = async (cost: number, action: string) => {
+  try {
+    let em = "";
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i) || "";
+      if (k.startsWith("sb-") && k.endsWith("-auth-token")) {
+        const j = JSON.parse(localStorage.getItem(k) || "null");
+        em = (j && j.user && j.user.email) || (j && j.currentSession && j.currentSession.user && j.currentSession.user.email) || "";
+        if (em) break;
+      }
+    }
+    if (!em) { try { em = localStorage.getItem("fp_wallet_email") || ""; } catch (e) {} }
+    if (em) {
+      const r = await fetch("/api/credits", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, cost, action }) });
+      const j = await r.json();
+      if (j && j.newBalance !== undefined) window.dispatchEvent(new CustomEvent("wallet-updated", { detail: { balance: j.newBalance } }));
+    }
+  } catch (e) {}
+};
   // TASK-METER-LISTENER
 useEffect(() => {
   const doCharge = async (cost: number, action: string) => {
