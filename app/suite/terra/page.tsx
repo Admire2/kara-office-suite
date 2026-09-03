@@ -397,12 +397,12 @@ useEffect(() => {
     setPlanBusy(false);
   };
 
-  const startFromPlan = () => {
+  const startFromPlan = async () => { await chargeCredits(15, "design");
     const qq = "The user APPROVED this plan. Produce the complete engineering design: 1) block architecture, 2) component selection with real part numbers and cheaper alternates, 3) power budget calculation, 4) PCB layout notes, 5) firmware bring-up outline, 6) end with a section '## CONNECTIONS' listing every wire on its own line as 'SOURCE -> DEST : LABEL' using short pin names, 7) then a section '## ASSEMBLY' listing physical attachments on its own line as 'PART -> HOST : METHOD' (standoffs, screws, gaskets, seals, brackets, mounting).\n\nAPPROVED PLAN:\n" + plan;
     ask(qq);
   };
 
-  const generateReport = async () => {
+  const generateReport = async () => { await chargeCredits(5, "report");
     if (!answer || reportBusy) return;
     setReportBusy(true); setReport("");
     const prompt = "REPORT MODE. Convert the engineering answer below into an ASSEMBLER-FRIENDLY DESIGN SHEET that a self-employed technician can follow. Use EXACTLY these section headers, each on its own line starting with '## ': '## MATERIALS', '## TOOLS', '## STEPS', '## TEST', '## SAFETY'. Under MATERIALS list each item on its own line starting with '- ' and a category tag in square brackets: [POWER] for power parts, [IC] for chips, [PASSIVE] for resistors capacitors inductors, [PCB] for board items, [CONN] for connectors, [MECH] for mechanical parts; then part name, value and quantity. Under STEPS write numbered lines starting with 'STEP 1: ', 'STEP 2: ' etc, in simple language, one action per step. Keep everything short and practical. No extra commentary. If the original design contains wire lines 'SOURCE -> DEST : LABEL', keep them under a '## CONNECTIONS' section. If it contains physical attachment lines 'PART -> HOST : METHOD', keep them under a '## ASSEMBLY' section.\n\nORIGINAL DESIGN:\n" + answer;
