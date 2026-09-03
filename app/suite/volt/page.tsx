@@ -277,6 +277,26 @@ const scoreSuites = (q: any) => {
   return pct;
 };
 export default function VoltPage() {
+  const chargeCredits = async (cost: number, action: string) => {
+    try {
+      let em = "";
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i) || "";
+        if (k.startsWith("sb-") && k.endsWith("-auth-token")) {
+          const j = JSON.parse(localStorage.getItem(k) || "null");
+          em = (j && j.user && j.user.email) || (j && j.currentSession && j.currentSession.user && j.currentSession.user.email) || "";
+          if (em) break;
+        }
+      }
+      if (!em) { try { em = localStorage.getItem("fp_wallet_email") || ""; } catch (e) {} }
+      if (em) {
+        const r = await fetch("/api/credits", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, cost, action }) });
+        const j = await r.json();
+        if (j && j.newBalance !== undefined) window.dispatchEvent(new CustomEvent("wallet-updated", { detail: { balance: j.newBalance } }));
+      }
+    } catch (e) {}
+  };
+
   // TASK-METER-LISTENER
 useEffect(() => {
   const doCharge = async (cost: number, action: string) => {
@@ -367,7 +387,7 @@ useEffect(() => {
 
   const makePlan = async () => {
     if (!q.trim()) { alert("Write the client project / task in the top box first"); return; }
-    setPlanBusy(true); setPlan("");
+    chargeCredits(5, "plan"); setPlanBusy(true); setPlan("");
     const prompt = "PLAN MODE. Client project brief: " + q + "\nProject constraints: Environment & use: " + (qbEnv || "unspecified") + " | Target unit cost: " + (qbBudget || "unspecified") + " | Production volume: " + (qbVolume || "unspecified") + " | Certifications & standards: " + (qbCerts || "unspecified") + " | Production type: " + (qbProd || "unspecified") + ".\nIf production type is Prototype, favor hand-solder-friendly parts and breakout modules. If Volume production, favor reel-packed parts, DFM notes and test-jig planning.\nOutput exactly two sections. First line '#Goal' then a one-paragraph goal. Then line '#Implementation plan' then numbered steps (1., 1.1, 1.2, 2., 2.1...). Tailor component choices to volume and budget, environment (IP rating, temperature range), and certifications (compliance path). Mention example core components (MCU, sensor, power IC, radio). Keep it short and approval-ready. No extra commentary.";
     try {
       const r = await fetch("/api/volt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, domain: domain }) });
