@@ -36,6 +36,7 @@ const PROVIDERS = [
   { name: "Groq-Llama70B", url: "https://api.groq.com/openai/v1/chat/completions", model: "llama-3.3-70b-versatile", keyEnv: "GROQ_API_KEY" },
 ] as any[];
 
+$calcBlock
 export async function POST(req: Request) {
   const { question, domain } = await req.json();
   const prompt = SYS + "\n\nDomain: " + (domain || "Auto-detect (recommended)") + "\n\nQuestion:\n" + (question || "");
