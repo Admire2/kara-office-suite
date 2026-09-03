@@ -36,7 +36,35 @@ const PROVIDERS = [
   { name: "Groq-Llama70B", url: "https://api.groq.com/openai/v1/chat/completions", model: "llama-3.3-70b-versatile", keyEnv: "GROQ_API_KEY" },
 ] as any[];
 
-$calcBlock
+
+
+// CALC ENGINE — deterministic math for civil/structural domains
+function computeTerra(q: string, domain: string): any | null {
+  const nums = (q.match(/\d+(?:\.\d+)?/g) || []).map(n => parseFloat(n));
+  const L = nums[0] || 20, w = nums[1] || 20, P = nums[2] || 100;
+  const dom = (domain || q).toLowerCase();
+
+  if (dom.includes("bridge") || dom.includes("culvert") || q.toLowerCase().includes("bridge")) {
+    const nG = Math.max(2, Math.round(w / 2.5));
+    const wD = 0.2 * 25 * w + 1.5 * nG;
+    const lane = 9.3 * w;
+    const M_D = (wD * L * L) / 8;
+    const M_L = (P * L) / 4 + (lane * L * L) / 8;
+    const Mu = 1.25 * M_D + 1.75 * M_L;
+    return { girders: nG, factored_moment_kNm: Math.round(Mu), required_S_cm3: Math.round(Mu * 1e6 / 345 / 1000), deflection_limit_mm: Math.round(L * 1000 / 800), loadFactors: { dead: 1.25, live: 1.75, impact: "33%" } };
+  }
+  if (dom.includes("foundation") || dom.includes("geotech") || dom.includes("footing")) {
+    const qa = nums[3] || 150;
+    const A = P / qa;
+    return { area_m2: +A.toFixed(2), side_m: +Math.sqrt(A).toFixed(2) };
+  }
+  if (dom.includes("concrete") || dom.includes("slab")) {
+    const T = nums[3] || 0.2;
+    const V = L * w * T;
+    return { volume_m3: +V.toFixed(2), bags: Math.ceil(V * 320 / 50), rebar_kg: Math.ceil(V * 80) };
+  }
+  return null;
+}
 export async function POST(req: Request) {
   const { question, domain } = await req.json();
   const prompt = SYS + "\n\nDomain: " + (domain || "Auto-detect (recommended)") + "\n\nQuestion:\n" + (question || "");
