@@ -277,6 +277,38 @@ const scoreSuites = (q: any) => {
   return pct;
 };
 export default function TerraPage() {
+  // TERRA-EXTRA-METER (charges only actions not yet metered)
+useEffect(() => {
+  const doCharge = async (cost: number, action: string) => {
+    try {
+      let em = "";
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i) || "";
+        if (k.startsWith("sb-") && k.endsWith("-auth-token")) {
+          const j = JSON.parse(localStorage.getItem(k) || "null");
+          em = (j && j.user && j.user.email) || (j && j.currentSession && j.currentSession.user && j.currentSession.user.email) || "";
+          if (em) break;
+        }
+      }
+      if (!em) { try { em = localStorage.getItem("fp_wallet_email") || ""; } catch (e) {} }
+      if (em) {
+        const r = await fetch("/api/credits", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, cost, action }) });
+        const j = await r.json();
+        if (j && j.newBalance !== undefined) window.dispatchEvent(new CustomEvent("wallet-updated", { detail: { balance: j.newBalance } }));
+      }
+    } catch (e) {}
+  };
+  const onClick = (e: MouseEvent) => {
+    const t = (e.target as HTMLElement).closest("button");
+    if (!t) return;
+    const txt = (t.textContent || "").toLowerCase();
+    if (txt.includes("start designing")) doCharge(5, "plan");
+    else if (txt.includes("freecad") || txt.includes("download") && txt.includes("pack")) doCharge(5, "freecad");
+    else if (txt.includes("team plan") || txt.includes("get team plan")) doCharge(10, "team");
+  };
+  document.addEventListener("click", onClick);
+  return () => document.removeEventListener("click", onClick);
+}, []);
   const chargeCredits = async (cost: number, action: string) => {
   try {
     let em = "";
