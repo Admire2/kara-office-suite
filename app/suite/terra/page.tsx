@@ -421,7 +421,7 @@ useEffect(() => {
     try {
       const r = await fetch("/api/terra", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, domain: domain }) });
       const j = await r.json();
-      setReport(j.answer || "Report generation failed - try again.");
+      if (j.answer) { chargeCredits(5, "report"); setReport(j.answer); } else { setReport("Report generation failed - try again."); }
     } catch (e) { setReport("Report generation failed - try again."); }
     setReportBusy(false);
   };

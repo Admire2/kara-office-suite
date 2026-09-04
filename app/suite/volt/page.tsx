@@ -427,12 +427,12 @@ useEffect(() => {
 
   const generateReport = async () => {
     if (!answer || reportBusy) return;
-    chargeCredits(5, "report"); setReportBusy(true); setReport("");
+    setReportBusy(true); setReport("");
     const prompt = "REPORT MODE. Convert the engineering answer below into an ASSEMBLER-FRIENDLY DESIGN SHEET that a self-employed technician can follow. Use EXACTLY these section headers, each on its own line starting with '## ': '## MATERIALS', '## TOOLS', '## STEPS', '## TEST', '## SAFETY'. Under MATERIALS list each item on its own line starting with '- ' and a category tag in square brackets: [POWER] for power parts, [IC] for chips, [PASSIVE] for resistors capacitors inductors, [PCB] for board items, [CONN] for connectors, [MECH] for mechanical parts; then part name, value and quantity. Under STEPS write numbered lines starting with 'STEP 1: ', 'STEP 2: ' etc, in simple language, one action per step. Keep everything short and practical. No extra commentary. If the original design contains wire lines 'SOURCE -> DEST : LABEL', keep them under a '## CONNECTIONS' section. If it contains physical attachment lines 'PART -> HOST : METHOD', keep them under a '## ASSEMBLY' section.\n\nORIGINAL DESIGN:\n" + answer;
     try {
       const r = await fetch("/api/volt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, domain: domain }) });
       const j = await r.json();
-      setReport(j.answer || "Report generation failed - try again.");
+      if (j.answer) { chargeCredits(5, "report"); setReport(j.answer); } else { setReport("Report generation failed - try again."); }
     } catch (e) { setReport("Report generation failed - try again."); }
     setReportBusy(false);
   };
