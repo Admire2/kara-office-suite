@@ -277,6 +277,18 @@ const scoreSuites = (q: any) => {
   return pct;
 };
 export default function VoltPage() {
+  // SUITE-EXPORT-METER
+useEffect(() => {
+  const onClick = (e: MouseEvent) => {
+    const t = (e.target as HTMLElement).closest("button");
+    if (!t) return;
+    const txt = (t.textContent || "").toLowerCase();
+    if (txt.includes("freecad") || txt.includes("outputs")) chargeCredits(5, "export");
+    else if (txt.includes("print pack")) chargeCredits(5, "print_pack");
+  };
+  document.addEventListener("click", onClick);
+  return () => document.removeEventListener("click", onClick);
+}, []);
   const chargeCredits = async (cost: number, action: string) => {
     try {
       let em = "";
@@ -398,14 +410,14 @@ useEffect(() => {
     setPlanBusy(false);
   };
 
-  const startFromPlan = () => {
+  const startFromPlan = () => { chargeCredits(15, "design");
     const qq = "The user APPROVED this plan. Produce the complete engineering design: 1) block architecture, 2) component selection with real part numbers and cheaper alternates, 3) power budget calculation, 4) PCB layout notes, 5) firmware bring-up outline, 6) end with a section '## CONNECTIONS' listing every wire on its own line as 'SOURCE -> DEST : LABEL' using short pin names, 7) then a section '## ASSEMBLY' listing physical attachments on its own line as 'PART -> HOST : METHOD' (standoffs, screws, gaskets, seals, brackets, mounting).\n\nAPPROVED PLAN:\n" + plan;
     ask(qq);
   };
 
   const generateReport = async () => {
     if (!answer || reportBusy) return;
-    setReportBusy(true); setReport("");
+    chargeCredits(5, "report"); setReportBusy(true); setReport("");
     const prompt = "REPORT MODE. Convert the engineering answer below into an ASSEMBLER-FRIENDLY DESIGN SHEET that a self-employed technician can follow. Use EXACTLY these section headers, each on its own line starting with '## ': '## MATERIALS', '## TOOLS', '## STEPS', '## TEST', '## SAFETY'. Under MATERIALS list each item on its own line starting with '- ' and a category tag in square brackets: [POWER] for power parts, [IC] for chips, [PASSIVE] for resistors capacitors inductors, [PCB] for board items, [CONN] for connectors, [MECH] for mechanical parts; then part name, value and quantity. Under STEPS write numbered lines starting with 'STEP 1: ', 'STEP 2: ' etc, in simple language, one action per step. Keep everything short and practical. No extra commentary. If the original design contains wire lines 'SOURCE -> DEST : LABEL', keep them under a '## CONNECTIONS' section. If it contains physical attachment lines 'PART -> HOST : METHOD', keep them under a '## ASSEMBLY' section.\n\nORIGINAL DESIGN:\n" + answer;
     try {
       const r = await fetch("/api/volt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, domain: domain }) });
@@ -417,7 +429,7 @@ useEffect(() => {
 
   const reviewDesign = async () => {
     if (!answer || reviewBusy) return;
-    setReviewBusy(true); setReview("");
+    chargeCredits(10, "review"); setReviewBusy(true); setReview("");
     const prompt = "REVIEW MODE. You are a second, independent senior engineer auditing the design below against the client brief and constraints. Be strict. Output exactly three sections with headers '## RED FLAGS', '## AMBER NOTES', '## GREEN CHECKS'. Under RED FLAGS write lines '- [RED] area: problem -> fix'. Under AMBER NOTES '- [AMBER] risk or tradeoff'. Under GREEN CHECKS '- [GREEN] item verified correct'. End with one line 'VERDICT: READY TO BUILD' or 'VERDICT: NEEDS REVISION'.\n\nDESIGN UNDER REVIEW:\n" + answer;
     try {
       const r = await fetch("/api/volt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, domain: domain }) });
@@ -449,7 +461,7 @@ useEffect(() => {
 
   const teamPlan = async () => {
     if (!q.trim() || teamBusy) return;
-    setTeamBusy(true); setTeam("");
+    chargeCredits(10, "team"); setTeamBusy(true); setTeam("");
     const pctLine = "Use EXACTLY these contribution percentages: MAXI " + scoreSuites(q)[0] + "%, RIVET " + scoreSuites(q)[1] + "%, VOLT " + scoreSuites(q)[2] + "%, TERRA " + scoreSuites(q)[3] + "%.";
     const prompt = "COLLABORATION MODE. You are Volt, the Electronics & Hardware engineer, coordinating WITH your equal peers: RIVET (Mechanical), VOLT (Electrical Power) and TERRA (Civil & Structural). The four suites collaborate as equals; no suite operates under another. For the client project below produce a cross-suite plan with EXACTLY these headers: '## MAXI — Electronics & Hardware', '## RIVET — Mechanical', '## VOLT — Electrical Power', '## TERRA — Civil & Structural', '## TIMELINE', '## HANDOFFS'. Under each suite header first line 'Contribution: XX%' then 3-6 bullets '- deliverable' that suite will design or produce. If not needed write 'Contribution: 0%' and '- Not required for this project'. " + pctLine + " Under TIMELINE write 'PHASE 1 Prototype: T+X weeks', 'PHASE 2 Validation (DVT): T+Y weeks', 'PHASE 3 Mass production ready: T+Z weeks'. Under HANDOFFS write lines 'FROM -> TO : what is exchanged'. End with 'Coordination: the four suites collaborate as equals and facilitate each other''s handoffs.'\n\nProject: " + q + "\nConstraints: Environment: " + (qbEnv || "unspecified") + " | Cost: " + (qbBudget || "unspecified") + " | Volume: " + (qbVolume || "unspecified") + " | Certs: " + (qbCerts || "unspecified") + " | Production type: " + (qbProd || "unspecified");
     try {
@@ -749,7 +761,7 @@ const downloadPdf = async (withDiy?: boolean) => {
                     body: JSON.stringify({ image: base64, storePrice: (() => { const sp = (document.getElementById("store-price-input") as HTMLInputElement)?.value || ""; const ns = (sp.match(/\d[\d,]*/g) || []).map(x => parseInt(x.replace(/,/g, ""), 10)).filter(n => n > 0); return ns.length ? String(Math.round(ns.reduce((a, b) => a + b, 0) / ns.length)) : ""; })() })
                   });
                   const data = await res.json();
-                  if (data.text) { try { let em = ""; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i) || ""; if (k.startsWith("sb-") && k.endsWith("-auth-token")) { const j = JSON.parse(localStorage.getItem(k) || "null"); em = (j && j.user && j.user.email) || (j && j.currentSession && j.currentSession.user && j.currentSession.user.email) || ""; if (em) break; } } } catch (e) {} if (!em) { try { em = localStorage.getItem("fp_wallet_email") || ""; } catch (e) {} } if (em) { fetch("/api/credits", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, cost: 10, action: "teardown" }) }).catch(() => {}); } } catch {} setQ("TEARDOWN FROM UPLOADED PHOTO:\n" + (() => { const cs = [...data.text.matchAll(/-\s*\$([\d,]+)\s*-\s*(?:MAXI|RIVET|VOLT|TERRA)/g)].map(m => parseInt(m[1].replace(/,/g, ""), 10)); const s = cs.reduce((a, b) => a + b, 0); let t2 = data.text; if (s > 0) { t2 = t2.replace(/EST\. BOM @1k:[^\n]*/, "EST. BOM @1k: $" + s.toLocaleString()); } const sm = t2.match(/TEAM SPLIT:[^\n]*?MAXI (\d+)%[^\n]*?RIVET (\d+)%[^\n]*?VOLT (\d+)%[^\n]*?TERRA (\d+)%/); if (sm) { const a = +sm[1]; let b = +sm[2]; const c = +sm[3]; const d = +sm[4]; const tot = a + b + c + d; if (tot !== 100 && tot > 0) { b += 100 - tot; t2 = t2.replace(/TEAM SPLIT:[^\n]*/, "TEAM SPLIT: MAXI " + a + "% / RIVET " + b + "% / VOLT " + c + "% / TERRA " + d + "%"); } } const spv = (() => { const el = document.getElementById("store-price-input") as HTMLInputElement | null; const sp = el ? el.value : ""; const ns = (sp.match(/\d[\d,]*/g) || []).map(x => parseInt(x.replace(/,/g, ""), 10)).filter(n => n > 0); return ns.length ? Math.round(ns.reduce((x, y) => x + y, 0) / ns.length) : 0; })();return t2; })() + "\n\n⚠️ PRELIMINARY TEARDOWN - NOT A QUOTE. Parts, materials and costs are AI estimates for guidance only (typical accuracy +/-30%). Not final, not verified, no warranty of fitness or accuracy. Use at your own risk. For binding numbers, order a Certified Partner review."); setAnswer("✅ PARTS LIST ready - your 01 BRIEF is now filled with the teardown. Press Start Designing below."); }
+                  if (data.text) { try { let em = ""; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i) || ""; if (k.startsWith("sb-") && k.endsWith("-auth-token")) { const j = JSON.parse(localStorage.getItem(k) || "null"); em = (j && j.user && j.user.email) || (j && j.currentSession && j.currentSession.user && j.currentSession.user.email) || ""; if (em) break; } } } catch (e) {} if (!em) { try { em = localStorage.getItem("fp_wallet_email") || ""; } catch (e) {} } if (em) { fetch("/api/credits", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, cost: 10, action: "teardown" }) }).then(r => r.json()).then(j => { if (j && j.newBalance !== undefined) window.dispatchEvent(new CustomEvent("wallet-updated", { detail: { balance: j.newBalance } })); }).catch(() => {}); } } catch {} setQ("TEARDOWN FROM UPLOADED PHOTO:\n" + (() => { const cs = [...data.text.matchAll(/-\s*\$([\d,]+)\s*-\s*(?:MAXI|RIVET|VOLT|TERRA)/g)].map(m => parseInt(m[1].replace(/,/g, ""), 10)); const s = cs.reduce((a, b) => a + b, 0); let t2 = data.text; if (s > 0) { t2 = t2.replace(/EST\. BOM @1k:[^\n]*/, "EST. BOM @1k: $" + s.toLocaleString()); } const sm = t2.match(/TEAM SPLIT:[^\n]*?MAXI (\d+)%[^\n]*?RIVET (\d+)%[^\n]*?VOLT (\d+)%[^\n]*?TERRA (\d+)%/); if (sm) { const a = +sm[1]; let b = +sm[2]; const c = +sm[3]; const d = +sm[4]; const tot = a + b + c + d; if (tot !== 100 && tot > 0) { b += 100 - tot; t2 = t2.replace(/TEAM SPLIT:[^\n]*/, "TEAM SPLIT: MAXI " + a + "% / RIVET " + b + "% / VOLT " + c + "% / TERRA " + d + "%"); } } const spv = (() => { const el = document.getElementById("store-price-input") as HTMLInputElement | null; const sp = el ? el.value : ""; const ns = (sp.match(/\d[\d,]*/g) || []).map(x => parseInt(x.replace(/,/g, ""), 10)).filter(n => n > 0); return ns.length ? Math.round(ns.reduce((x, y) => x + y, 0) / ns.length) : 0; })();return t2; })() + "\n\n⚠️ PRELIMINARY TEARDOWN - NOT A QUOTE. Parts, materials and costs are AI estimates for guidance only (typical accuracy +/-30%). Not final, not verified, no warranty of fitness or accuracy. Use at your own risk. For binding numbers, order a Certified Partner review."); setAnswer("✅ PARTS LIST ready - your 01 BRIEF is now filled with the teardown. Press Start Designing below."); }
                   else setAnswer("❌ Analysis failed: " + (data.error || "Unknown error"));
                 } catch (err: any) {
                   setAnswer("❌ Upload failed: " + err.message);
