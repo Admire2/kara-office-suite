@@ -1,37 +1,33 @@
 "use client";
 import { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 export default function AdminPage() {
   const [email, setEmail] = useState("");
   const [credits, setCredits] = useState(2000);
-  const [reason, setReason] = useState("testing"); const [passcode, setPasscode] = useState("");
+  const [reason, setReason] = useState("testing");
+  const [passcode, setPasscode] = useState("founder2026");
   const [usage, setUsage] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const getToken = async () => {
-    await supabase.auth.refreshSession();
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token || "";
-  };
 
   useEffect(() => { loadAllUsage(); }, []);
 
   const loadAllUsage = async () => {
-    const tok = await getToken();
-    if (!tok) return;
-    const r = await fetch("/api/admin/credits", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok }, body: JSON.stringify({ action: "get_all_usage", passcode }) });
+    const r = await fetch("/api/admin/credits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_all_usage", passcode })
+    });
     const j = await r.json();
     setUsage(j.usage || []);
   };
 
   const adjust = async () => {
     setLoading(true);
-    const tok = await getToken();
-    if (!tok) { alert("Not signed in. Go to /auth, sign in as your admin email, then return here."); setLoading(false); return; }
-    const r = await fetch("/api/admin/credits", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok }, body: JSON.stringify({ action: "adjust", email, credits, reason, passcode }) });
+    const r = await fetch("/api/admin/credits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "adjust", email, credits, reason, passcode })
+    });
     const j = await r.json();
     if (j.success) { alert("Adjusted: " + j.oldBalance + " -> " + j.newBalance); loadAllUsage(); }
     else { alert("Error: " + j.error); }
@@ -40,14 +36,15 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-8">
-      <h1 className="text-3xl font-bold mb-6">Admin Panel - Credit Management</h1>
+      <h1 className="text-3xl font-bold mb-6">🔑 Admin Panel - Credit Management</h1>
       <div className="bg-slate-900 rounded-xl p-6 mb-6 max-w-md">
         <h2 className="text-xl font-bold mb-4">Adjust Credits</h2>
         <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className="w-full p-2 mb-2 bg-slate-800 rounded" />
         <input type="number" value={credits} onChange={e => setCredits(+e.target.value)} placeholder="Credits (+/-)" className="w-full p-2 mb-2 bg-slate-800 rounded" />
-        <input value={passcode} onChange={e => setPasscode(e.target.value)} placeholder="Admin passcode" type="password" className="w-full p-2 mb-2 bg-slate-800 rounded" /><input value={reason} onChange={e => setReason(e.target.value)} placeholder="Reason" className="w-full p-2 mb-4 bg-slate-800 rounded" />
+        <input value={reason} onChange={e => setReason(e.target.value)} placeholder="Reason" className="w-full p-2 mb-4 bg-slate-800 rounded" />
+        <input type="password" value={passcode} onChange={e => setPasscode(e.target.value)} placeholder="Admin Passcode" className="w-full p-2 mb-4 bg-slate-800 rounded" />
         <button onClick={adjust} disabled={loading} className="bg-fuchsia-600 px-6 py-2 rounded font-bold hover:bg-fuchsia-500 disabled:opacity-40">{loading ? "Adjusting..." : "Adjust Credits"}</button>
-        <p className="text-xs text-slate-400 mt-2">Must be signed in at /auth as an admin email first.</p>
+        <p className="text-xs text-slate-400 mt-2">Default passcode: founder2026 (or set ADMIN_PASSCODE env var)</p>
       </div>
       <div className="bg-slate-900 rounded-xl p-6">
         <h2 className="text-xl font-bold mb-4">Recent Usage (last 100, Eastern Time)</h2>
