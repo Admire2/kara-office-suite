@@ -417,7 +417,7 @@ useEffect(() => {
 
   const reviewDesign = async () => {
     if (!answer || reviewBusy) return;
-    setReviewBusy(true); setReview("");
+    chargeCredits(10, "review"); setReviewBusy(true); setReview("");
     const prompt = "REVIEW MODE. You are a second, independent senior engineer auditing the design below against the client brief and constraints. Be strict. Output exactly three sections with headers '## RED FLAGS', '## AMBER NOTES', '## GREEN CHECKS'. Under RED FLAGS write lines '- [RED] area: problem -> fix'. Under AMBER NOTES '- [AMBER] risk or tradeoff'. Under GREEN CHECKS '- [GREEN] item verified correct'. End with one line 'VERDICT: READY TO BUILD' or 'VERDICT: NEEDS REVISION'.\n\nDESIGN UNDER REVIEW:\n" + answer;
     try {
       const r = await fetch("/api/terra", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, domain: domain }) });
@@ -449,7 +449,7 @@ useEffect(() => {
 
   const teamPlan = async () => {
     if (!q.trim() || teamBusy) return;
-    setTeamBusy(true); setTeam("");
+    chargeCredits(10, "team"); setTeamBusy(true); setTeam("");
     const pctLine = "Use EXACTLY these contribution percentages: MAXI " + scoreSuites(q)[0] + "%, RIVET " + scoreSuites(q)[1] + "%, VOLT " + scoreSuites(q)[2] + "%, TERRA " + scoreSuites(q)[3] + "%.";
     const prompt = "COLLABORATION MODE. You are Terra, the Electronics & Hardware engineer, coordinating WITH your equal peers: RIVET (Mechanical), VOLT (Electrical Power) and TERRA (Civil & Structural). The four suites collaborate as equals; no suite operates under another. For the client project below produce a cross-suite plan with EXACTLY these headers: '## MAXI — Electronics & Hardware', '## RIVET — Mechanical', '## VOLT — Electrical Power', '## TERRA — Civil & Structural', '## TIMELINE', '## HANDOFFS'. Under each suite header first line 'Contribution: XX%' then 3-6 bullets '- deliverable' that suite will design or produce. If not needed write 'Contribution: 0%' and '- Not required for this project'. " + pctLine + " Under TIMELINE write 'PHASE 1 Prototype: T+X weeks', 'PHASE 2 Validation (DVT): T+Y weeks', 'PHASE 3 Mass production ready: T+Z weeks'. Under HANDOFFS write lines 'FROM -> TO : what is exchanged'. End with 'Coordination: the four suites collaborate as equals and facilitate each other''s handoffs.'\n\nProject: " + q + "\nConstraints: Environment: " + (qbEnv || "unspecified") + " | Cost: " + (qbBudget || "unspecified") + " | Volume: " + (qbVolume || "unspecified") + " | Certs: " + (qbCerts || "unspecified") + " | Production type: " + (qbProd || "unspecified");
     try {
