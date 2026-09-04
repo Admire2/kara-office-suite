@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const { action, email, credits, reason } = await req.json();
     const auth = req.headers.get("authorization") || "";
     const token = auth.replace("Bearer ", "");
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+    const svcKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""; const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, svcKey);
     const { data: { user } } = await supabase.auth.getUser(token);
     
     if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
