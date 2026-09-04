@@ -276,7 +276,19 @@ const scoreSuites = (q: any) => {
   }
   return pct;
 };
+let LASTIMG = ""; let LASTCHIP = ""; let LASTBRIEF = "";
 export default function VoltPage() {
+    const imgBase = () => {
+    try {
+      const fi = document.querySelector('input[type=file]') as HTMLInputElement | null;
+      if (fi && fi.value) {
+        let n = (fi.value.split('\\').pop() || "");
+        n = n.replace(/\s*\(\d+\)/g, "").replace(/\.[^.]+$/, "").trim();
+        return n;
+      }
+    } catch (e) {}
+    return "";
+  };
   const clearAll = () => { setPlan(""); setAnswer(""); setReport(""); setReview(""); };
 
   // QUICK-ASK-METER
@@ -285,7 +297,7 @@ useEffect(() => {
     const t = (e.target as HTMLElement).closest("button");
     if (!t) return;
     const txt = (t.textContent || "").toLowerCase();
-    if (txt.includes("⚡") || txt.includes("quick ask")) { clearAll(); chargeCredits(15, "design_quick"); }
+    if (txt.includes("⚡") || txt.includes("quick ask")) { if (txt && txt !== LASTCHIP) clearAll(); if (txt) LASTCHIP = txt; chargeCredits(15, "design_quick"); }
   };
   document.addEventListener("click", onClick);
   return () => document.removeEventListener("click", onClick);
@@ -411,13 +423,13 @@ useEffect(() => {
 
   const makePlan = async () => {
     if (!q.trim()) { alert("Write the client project / task in the top box first"); return; }
-    chargeCredits(5, "plan"); clearAll(); setPlanBusy(true); setPlan("");
+    chargeCredits(5, "plan"); const bt = ((document.querySelector("textarea") as HTMLTextAreaElement | null)?.value.trim() || ""); if (LASTBRIEF && bt && bt !== LASTBRIEF) clearAll(); setPlanBusy(true); setPlan("");
     const prompt = "PLAN MODE. Client project brief: " + q + "\nProject constraints: Environment & use: " + (qbEnv || "unspecified") + " | Target unit cost: " + (qbBudget || "unspecified") + " | Production volume: " + (qbVolume || "unspecified") + " | Certifications & standards: " + (qbCerts || "unspecified") + " | Production type: " + (qbProd || "unspecified") + ".\nIf production type is Prototype, favor hand-solder-friendly parts and breakout modules. If Volume production, favor reel-packed parts, DFM notes and test-jig planning.\nOutput exactly two sections. First line '#Goal' then a one-paragraph goal. Then line '#Implementation plan' then numbered steps (1., 1.1, 1.2, 2., 2.1...). Tailor component choices to volume and budget, environment (IP rating, temperature range), and certifications (compliance path). Mention example core components (MCU, sensor, power IC, radio). Keep it short and approval-ready. No extra commentary.";
     try {
       const r = await fetch("/api/volt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, domain: domain }) });
       const j = await r.json();
       const t = j.answer || "";
-      if (!t || t.indexOf("All AI providers") >= 0) { setPlan(""); alert("Volt's brains are busy right now - wait about 60 seconds and press Start Designing again."); } else { setPlan(t); }
+      if (!t || t.indexOf("All AI providers") >= 0) { setPlan(""); alert("Volt's brains are busy right now - wait about 60 seconds and press Start Designing again."); } else { setPlan(t); LASTBRIEF = ((document.querySelector("textarea") as HTMLTextAreaElement | null)?.value.trim() || ""); }
     } catch (e) { setPlan(""); alert("Volt hit a connection issue - try again."); }
     setPlanBusy(false);
   };
@@ -773,7 +785,7 @@ const downloadPdf = async (withDiy?: boolean) => {
                     body: JSON.stringify({ image: base64, storePrice: (() => { const sp = (document.getElementById("store-price-input") as HTMLInputElement)?.value || ""; const ns = (sp.match(/\d[\d,]*/g) || []).map(x => parseInt(x.replace(/,/g, ""), 10)).filter(n => n > 0); return ns.length ? String(Math.round(ns.reduce((a, b) => a + b, 0) / ns.length)) : ""; })() })
                   });
                   const data = await res.json();
-                  if (data.text) { try { let em = ""; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i) || ""; if (k.startsWith("sb-") && k.endsWith("-auth-token")) { const j = JSON.parse(localStorage.getItem(k) || "null"); em = (j && j.user && j.user.email) || (j && j.currentSession && j.currentSession.user && j.currentSession.user.email) || ""; if (em) break; } } } catch (e) {} if (!em) { try { em = localStorage.getItem("fp_wallet_email") || ""; } catch (e) {} } if (em) { fetch("/api/credits", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, cost: 10, action: "teardown" }) }).then(r => r.json()).then(j => { clearAll(); if (j && j.newBalance !== undefined) window.dispatchEvent(new CustomEvent("wallet-updated", { detail: { balance: j.newBalance } })); }).catch(() => {}); } } catch {} setQ("TEARDOWN FROM UPLOADED PHOTO:\n" + (() => { const cs = [...data.text.matchAll(/-\s*\$([\d,]+)\s*-\s*(?:MAXI|RIVET|VOLT|TERRA)/g)].map(m => parseInt(m[1].replace(/,/g, ""), 10)); const s = cs.reduce((a, b) => a + b, 0); let t2 = data.text; if (s > 0) { t2 = t2.replace(/EST\. BOM @1k:[^\n]*/, "EST. BOM @1k: $" + s.toLocaleString()); } const sm = t2.match(/TEAM SPLIT:[^\n]*?MAXI (\d+)%[^\n]*?RIVET (\d+)%[^\n]*?VOLT (\d+)%[^\n]*?TERRA (\d+)%/); if (sm) { const a = +sm[1]; let b = +sm[2]; const c = +sm[3]; const d = +sm[4]; const tot = a + b + c + d; if (tot !== 100 && tot > 0) { b += 100 - tot; t2 = t2.replace(/TEAM SPLIT:[^\n]*/, "TEAM SPLIT: MAXI " + a + "% / RIVET " + b + "% / VOLT " + c + "% / TERRA " + d + "%"); } } const spv = (() => { const el = document.getElementById("store-price-input") as HTMLInputElement | null; const sp = el ? el.value : ""; const ns = (sp.match(/\d[\d,]*/g) || []).map(x => parseInt(x.replace(/,/g, ""), 10)).filter(n => n > 0); return ns.length ? Math.round(ns.reduce((x, y) => x + y, 0) / ns.length) : 0; })();return t2; })() + "\n\n⚠️ PRELIMINARY TEARDOWN - NOT A QUOTE. Parts, materials and costs are AI estimates for guidance only (typical accuracy +/-30%). Not final, not verified, no warranty of fitness or accuracy. Use at your own risk. For binding numbers, order a Certified Partner review."); setAnswer("✅ PARTS LIST ready - your 01 BRIEF is now filled with the teardown. Press Start Designing below."); }
+                  if (data.text) { try { let em = ""; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i) || ""; if (k.startsWith("sb-") && k.endsWith("-auth-token")) { const j = JSON.parse(localStorage.getItem(k) || "null"); em = (j && j.user && j.user.email) || (j && j.currentSession && j.currentSession.user && j.currentSession.user.email) || ""; if (em) break; } } } catch (e) {} if (!em) { try { em = localStorage.getItem("fp_wallet_email") || ""; } catch (e) {} } if (em) { fetch("/api/credits", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, cost: 10, action: "teardown" }) }).then(r => r.json()).then(j => { const ib = imgBase(); if (ib && ib !== LASTIMG) clearAll(); if (ib) LASTIMG = ib; if (j && j.newBalance !== undefined) window.dispatchEvent(new CustomEvent("wallet-updated", { detail: { balance: j.newBalance } })); }).catch(() => {}); } } catch {} setQ("TEARDOWN FROM UPLOADED PHOTO:\n" + (() => { const cs = [...data.text.matchAll(/-\s*\$([\d,]+)\s*-\s*(?:MAXI|RIVET|VOLT|TERRA)/g)].map(m => parseInt(m[1].replace(/,/g, ""), 10)); const s = cs.reduce((a, b) => a + b, 0); let t2 = data.text; if (s > 0) { t2 = t2.replace(/EST\. BOM @1k:[^\n]*/, "EST. BOM @1k: $" + s.toLocaleString()); } const sm = t2.match(/TEAM SPLIT:[^\n]*?MAXI (\d+)%[^\n]*?RIVET (\d+)%[^\n]*?VOLT (\d+)%[^\n]*?TERRA (\d+)%/); if (sm) { const a = +sm[1]; let b = +sm[2]; const c = +sm[3]; const d = +sm[4]; const tot = a + b + c + d; if (tot !== 100 && tot > 0) { b += 100 - tot; t2 = t2.replace(/TEAM SPLIT:[^\n]*/, "TEAM SPLIT: MAXI " + a + "% / RIVET " + b + "% / VOLT " + c + "% / TERRA " + d + "%"); } } const spv = (() => { const el = document.getElementById("store-price-input") as HTMLInputElement | null; const sp = el ? el.value : ""; const ns = (sp.match(/\d[\d,]*/g) || []).map(x => parseInt(x.replace(/,/g, ""), 10)).filter(n => n > 0); return ns.length ? Math.round(ns.reduce((x, y) => x + y, 0) / ns.length) : 0; })();return t2; })() + "\n\n⚠️ PRELIMINARY TEARDOWN - NOT A QUOTE. Parts, materials and costs are AI estimates for guidance only (typical accuracy +/-30%). Not final, not verified, no warranty of fitness or accuracy. Use at your own risk. For binding numbers, order a Certified Partner review."); setAnswer("✅ PARTS LIST ready - your 01 BRIEF is now filled with the teardown. Press Start Designing below."); }
                   else setAnswer("❌ Analysis failed: " + (data.error || "Unknown error"));
                 } catch (err: any) {
                   setAnswer("❌ Upload failed: " + err.message);
