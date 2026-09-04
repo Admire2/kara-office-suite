@@ -21,11 +21,11 @@ export async function POST(req: Request) {
     const etNow = new Date().toLocaleString("en-US", { timeZone: "America/New_York", hour12: false });
 
     if (action === "adjust") {
-      const { data: bal } = await supabase.from("credits").select("balance").eq("email", email).maybeSingle();
-      const current = bal?.balance || 0;
+      const { data: bal } = await supabase.from("credits").select("balance, pack_balance").eq("email", email).maybeSingle();
+      const current = bal?.pack_balance || 0;
       const newBalance = current + (credits || 0);
-      if (bal) await supabase.from("credits").update({ balance: newBalance, updated_at: new Date().toISOString() }).eq("email", email);
-      else await supabase.from("credits").insert({ email, balance: newBalance, plan: "manual" });
+      if (bal) await supabase.from("credits").update({ pack_balance: newBalance, updated_at: new Date().toISOString() }).eq("email", email);
+      else await supabase.from("credits").insert({ email, pack_balance: newBalance, plan: "manual" });
       try { await supabase.from("credit_usage").insert({ email, action: "admin_adjust", credits, timestamp_et: etNow, suite: "admin", ip: "admin", user_agent: "Admin | " + (reason || "testing") }); } catch (e) {}
       return NextResponse.json({ success: true, oldBalance: current, newBalance });
     }
