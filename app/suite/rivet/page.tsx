@@ -277,6 +277,17 @@ const scoreSuites = (q: any) => {
   return pct;
 };
 export default function RivetPage() {
+  // QUICK-ASK-METER
+useEffect(() => {
+  const onClick = (e: MouseEvent) => {
+    const t = (e.target as HTMLElement).closest("button");
+    if (!t) return;
+    const txt = (t.textContent || "").toLowerCase();
+    if (txt.includes("⚡") || txt.includes("quick ask")) chargeCredits(15, "design_quick");
+  };
+  document.addEventListener("click", onClick);
+  return () => document.removeEventListener("click", onClick);
+}, []);
   // SUITE-EXPORT-METER
 useEffect(() => {
   const onClick = (e: MouseEvent) => {
@@ -338,7 +349,6 @@ useEffect(() => {
     else if (txt.includes("team plan")) doCharge(10, "team");
     else if (txt.includes("generate report")) doCharge(5, "report");
     else if (txt.includes("design review")) doCharge(10, "review");
-    else if (txt.includes("quick ask")) doCharge(2, "quick_ask");
   };
   document.addEventListener("click", onClick);
   return () => document.removeEventListener("click", onClick);

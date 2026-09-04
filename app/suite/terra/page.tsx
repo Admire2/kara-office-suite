@@ -277,6 +277,17 @@ const scoreSuites = (q: any) => {
   return pct;
 };
 export default function TerraPage() {
+  // QUICK-ASK-METER
+useEffect(() => {
+  const onClick = (e: MouseEvent) => {
+    const t = (e.target as HTMLElement).closest("button");
+    if (!t) return;
+    const txt = (t.textContent || "").toLowerCase();
+    if (txt.includes("⚡") || txt.includes("quick ask")) chargeCredits(15, "design_quick");
+  };
+  document.addEventListener("click", onClick);
+  return () => document.removeEventListener("click", onClick);
+}, []);
   // TERRA-METER-V2
 useEffect(() => {
   const doCharge = async (cost: number, action: string) => {
