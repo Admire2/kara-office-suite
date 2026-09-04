@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       if (bal) await supabase.from("credits").update({ pack_balance: newBalance, updated_at: new Date().toISOString() }).eq("email", email);
       else await supabase.from("credits").insert({ email, pack_balance: newBalance, plan: "manual" });
       try { await supabase.from("credit_usage").insert({ email, action: "admin_adjust", credits, timestamp_et: etNow, suite: "admin", ip: "admin", user_agent: "Admin | " + (reason || "testing") }); } catch (e) {}
-      return NextResponse.json({ success: true, oldBalance: current, newBalance });
+      return NextResponse.json({ success: true, oldBalance: current, newBalance, version: "v2-pack" });
     }
 
     if (action === "get_all_usage") {
