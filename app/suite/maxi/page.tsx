@@ -277,7 +277,20 @@ const scoreSuites = (q: any) => {
   return pct;
 };
 let LASTIMG = ""; let LASTCHIP = ""; let LASTBRIEF = "";
+let CURRENT_CODE = "US"; let SKIP_PLAN_CHARGE = false;
+const CODE_OPTIONS = [
+  { id: "US", label: "US (IBC/ASCE/AISC/ACI · imperial)" },
+  { id: "EUROCODE", label: "Eurocode (EN · metric)" },
+  { id: "UK", label: "UK (BS+EN · metric)" },
+  { id: "AU", label: "Australia (AS/NZS · metric)" },
+  { id: "CA", label: "Canada (NBC/CSA · metric)" },
+  { id: "IN", label: "India (IS · metric)" },
+];
 export default function MaxiPage() {
+  const [codeSys, setCodeSys] = useState("US");
+  const [freeChangeUsed, setFreeChangeUsed] = useState(false);
+  const regenPlan = (cs: string) => { CURRENT_CODE = cs; SKIP_PLAN_CHARGE = true; const b = Array.from(document.querySelectorAll("button")).find(x => (x.textContent || "").includes("Start Designing")); if (b) (b as HTMLButtonElement).click(); SKIP_PLAN_CHARGE = false; };
+  const onCodeChange = async (e: any) => { const next = e.target.value; if (next === codeSys) return; if (!freeChangeUsed) { setFreeChangeUsed(true); setCodeSys(next); regenPlan(next); } else { chargeCredits(5, "code_change"); setCodeSys(next); regenPlan(next); } };
     const imgBase = () => {
     try {
       const fi = document.querySelector('input[type=file]') as HTMLInputElement | null;
@@ -289,7 +302,7 @@ export default function MaxiPage() {
     } catch (e) {}
     return "";
   };
-  const clearAll = () => { setPlan(""); setAnswer(""); setReport(""); setReview(""); };
+  const clearAll = () => { try { setCodeSys("US"); setFreeChangeUsed(false); CURRENT_CODE = "US"; } catch (e) {}  setPlan(""); setAnswer(""); setReport(""); setReview(""); };
 
   // QUICK-ASK-METER
 useEffect(() => {
@@ -445,7 +458,7 @@ useEffect(() => {
     chargeCredits(5, "plan"); const bt = ((document.querySelector("textarea") as HTMLTextAreaElement | null)?.value.trim() || ""); if (LASTBRIEF && bt && bt !== LASTBRIEF) clearAll(); setPlanBusy(true); setPlan("");
     const prompt = "PLAN MODE. Client project brief: " + q + "\nProject constraints: Environment & use: " + (qbEnv || "unspecified") + " | Target unit cost: " + (qbBudget || "unspecified") + " | Production volume: " + (qbVolume || "unspecified") + " | Certifications & standards: " + (qbCerts || "unspecified") + " | Production type: " + (qbProd || "unspecified") + ".\nIf production type is Prototype, favor hand-solder-friendly parts and breakout modules. If Volume production, favor reel-packed parts, DFM notes and test-jig planning.\nOutput exactly two sections. First line '#Goal' then a one-paragraph goal. Then line '#Implementation plan' then numbered steps (1., 1.1, 1.2, 2., 2.1...). Tailor component choices to volume and budget, environment (IP rating, temperature range), and certifications (compliance path). Mention example core components (MCU, sensor, power IC, radio). Keep it short and approval-ready. No extra commentary.";
     try {
-      const r = await fetch("/api/maxi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, domain: domain }) });
+      const r = await fetch("/api/maxi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt + "\n\n[CLIENT SELECTED CODE SYSTEM: " + CURRENT_CODE + "]", domain: domain }) });
       const j = await r.json();
       const t = j.answer || "";
       if (!t || t.indexOf("All AI providers") >= 0) { setPlan(""); alert("Maxi's brains are busy right now - wait about 60 seconds and press Start Designing again."); } else { setPlan(t); LASTBRIEF = ((document.querySelector("textarea") as HTMLTextAreaElement | null)?.value.trim() || ""); }
@@ -463,7 +476,7 @@ useEffect(() => {
     setReportBusy(true); setReport("");
     const prompt = "REPORT MODE. Convert the engineering answer below into an ASSEMBLER-FRIENDLY DESIGN SHEET that a self-employed technician can follow. Use EXACTLY these section headers, each on its own line starting with '## ': '## MATERIALS', '## TOOLS', '## STEPS', '## TEST', '## SAFETY'. Under MATERIALS list each item on its own line starting with '- ' and a category tag in square brackets: [POWER] for power parts, [IC] for chips, [PASSIVE] for resistors capacitors inductors, [PCB] for board items, [CONN] for connectors, [MECH] for mechanical parts; then part name, value and quantity. Under STEPS write numbered lines starting with 'STEP 1: ', 'STEP 2: ' etc, in simple language, one action per step. Keep everything short and practical. No extra commentary. If the original design contains wire lines 'SOURCE -> DEST : LABEL', keep them under a '## CONNECTIONS' section. If it contains physical attachment lines 'PART -> HOST : METHOD', keep them under a '## ASSEMBLY' section.\n\nORIGINAL DESIGN:\n" + answer;
     try {
-      const r = await fetch("/api/maxi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, domain: domain }) });
+      const r = await fetch("/api/maxi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt + "\n\n[CLIENT SELECTED CODE SYSTEM: " + CURRENT_CODE + "]", domain: domain }) });
       const j = await r.json();
       if (j.answer) { chargeCredits(5, "report"); setReport(j.answer); } else { setReport("Report generation failed - try again."); }
     } catch (e) { setReport("Report generation failed - try again."); }
@@ -475,7 +488,7 @@ useEffect(() => {
     chargeCredits(10, "review"); setReviewBusy(true); setReview("");
     const prompt = "REVIEW MODE. You are a second, independent senior engineer auditing the design below against the client brief and constraints. Be strict. Output exactly three sections with headers '## RED FLAGS', '## AMBER NOTES', '## GREEN CHECKS'. Under RED FLAGS write lines '- [RED] area: problem -> fix'. Under AMBER NOTES '- [AMBER] risk or tradeoff'. Under GREEN CHECKS '- [GREEN] item verified correct'. End with one line 'VERDICT: READY TO BUILD' or 'VERDICT: NEEDS REVISION'.\n\nDESIGN UNDER REVIEW:\n" + answer;
     try {
-      const r = await fetch("/api/maxi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, domain: domain }) });
+      const r = await fetch("/api/maxi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt + "\n\n[CLIENT SELECTED CODE SYSTEM: " + CURRENT_CODE + "]", domain: domain }) });
       const j = await r.json();
       setReview(j.answer || "Review failed - try again.");
     } catch (e) { setReview("Review failed - try again."); }
@@ -487,7 +500,7 @@ useEffect(() => {
     setVendorBusy(true); setVendor("");
     const prompt = "VENDOR MODE. For the design below and production type '" + (qbProd || "unspecified") + "', produce a client-ready vendor shortlist with exactly these section headers: '## FAB VENDORS', '## ASSEMBLY VENDORS', '## PARTS VENDORS', '## CERTIFICATION VENDORS'. Under each, lines '- [VENDOR] Name - why suitable + what to ask them'. Mix global platforms (JLCPCB, PCBWay, Seeed Studio, OSH Park, MacroFab, LCSC, Digi-Key, Mouser) with a note to check FounderPilot Partners for local certified options. Match suggestions to the production type (prototype vs volume). End with one line 'NEXT: request quotes from at least 3 vendors and compare setup + unit cost.'.\n\nDESIGN:\n" + answer;
     try {
-      const r = await fetch("/api/maxi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, domain: domain }) });
+      const r = await fetch("/api/maxi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt + "\n\n[CLIENT SELECTED CODE SYSTEM: " + CURRENT_CODE + "]", domain: domain }) });
       const j = await r.json();
       setVendor(j.answer || "Vendor list failed - try again.");
     } catch (e) { setVendor("Vendor list failed - try again."); }
@@ -508,7 +521,7 @@ useEffect(() => {
     const pctLine = "Use EXACTLY these contribution percentages: MAXI " + scoreSuites(q)[0] + "%, RIVET " + scoreSuites(q)[1] + "%, VOLT " + scoreSuites(q)[2] + "%, TERRA " + scoreSuites(q)[3] + "%.";
     const prompt = "COLLABORATION MODE. You are Maxi, the Electronics & Hardware engineer, coordinating WITH your equal peers: RIVET (Mechanical), VOLT (Electrical Power) and TERRA (Civil & Structural). The four suites collaborate as equals; no suite operates under another. For the client project below produce a cross-suite plan with EXACTLY these headers: '## MAXI — Electronics & Hardware', '## RIVET — Mechanical', '## VOLT — Electrical Power', '## TERRA — Civil & Structural', '## TIMELINE', '## HANDOFFS'. Under each suite header first line 'Contribution: XX%' then 3-6 bullets '- deliverable' that suite will design or produce. If not needed write 'Contribution: 0%' and '- Not required for this project'. " + pctLine + " Under TIMELINE write 'PHASE 1 Prototype: T+X weeks', 'PHASE 2 Validation (DVT): T+Y weeks', 'PHASE 3 Mass production ready: T+Z weeks'. Under HANDOFFS write lines 'FROM -> TO : what is exchanged'. End with 'Coordination: the four suites collaborate as equals and facilitate each other''s handoffs.'\n\nProject: " + q + "\nConstraints: Environment: " + (qbEnv || "unspecified") + " | Cost: " + (qbBudget || "unspecified") + " | Volume: " + (qbVolume || "unspecified") + " | Certs: " + (qbCerts || "unspecified") + " | Production type: " + (qbProd || "unspecified");
     try {
-      const r = await fetch("/api/maxi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt, domain: domain }) });
+      const r = await fetch("/api/maxi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt + "\n\n[CLIENT SELECTED CODE SYSTEM: " + CURRENT_CODE + "]", domain: domain }) });
       const j = await r.json();
       setTeam(j.answer || "Team plan failed - try again.");
     } catch (e) { setTeam("Team plan failed - try again."); }
@@ -852,6 +865,9 @@ const downloadPdf = async (withDiy?: boolean) => {
             <div className="flex items-center justify-between">
               <p className="text-sm font-bold text-fuchsia-300">02 · PLAN — ready for your approval</p>
               <div className="flex gap-2">
+                <select value={codeSys} onChange={onCodeChange} title="Code system / units — 1 free change, then 5 credits" className="rounded-full border border-fuchsia-500/40 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">
+                  {CODE_OPTIONS.map((o: any) => <option key={o.id} value={o.id} disabled={o.id === codeSys}>{o.label}{o.id === codeSys ? " ✓" : ""}</option>)}
+                </select>
                 <button onClick={startFromPlan} disabled={plan.indexOf("#") < 0} className="rounded-full bg-fuchsia-600 px-5 py-2 text-sm font-bold text-white hover:bg-fuchsia-500 disabled:opacity-40">▶ Approve → 03 DESIGN</button>
                 <button onClick={teamPlan} disabled={teamBusy} className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-40">{teamBusy ? "Coordinating..." : "🤝 Team Plan"}</button>
                 <button onClick={() => setPlan("")} className="rounded-full border border-fuchsia-500/40 px-4 py-1.5 text-xs font-bold text-fuchsia-200 hover:bg-fuchsia-500/10">Clear</button>
