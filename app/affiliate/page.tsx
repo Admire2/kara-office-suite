@@ -7,18 +7,18 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 export default function AffiliateDashboard() {
   const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<any>({ referrals: 0, earned: 0, code: "" });
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false); const [origin, setOrigin] = useState("");
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      setOrigin(window.location.origin); const { data: { session } } = await supabase.auth.getSession();
       if (session) setUser(session.user);
     };
     getUser();
   }, []);
 
   const copyLink = () => {
-    navigator.clipboard.writeText(`https://founderpilot.com?ref=${stats.code}`);
+    navigator.clipboard.writeText(`${origin}?ref=${stats.code}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -37,7 +37,7 @@ export default function AffiliateDashboard() {
           <div className="flex items-center gap-2">
             <input 
               readOnly 
-              value={`https://founderpilot.com?ref=${stats.code || "your-code"}`} 
+              value={`${origin}?ref=${stats.code || "your-code"}`} 
               className="flex-1 p-3 bg-slate-800 rounded font-mono text-sm" 
             />
             <button 
