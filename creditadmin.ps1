@@ -88,6 +88,12 @@ while ($true) {
   Write-Host "7. FREEZE or UNFREEZE an account's credits"
   Write-Host "8. Show suspicious accounts (credits but no purchase)"
   Write-Host "9. Remove credits from suspicious account"
+  Write-Host "10. SETTLE due commissions now"
+  Write-Host "11. List commissions ledger"
+  Write-Host "12. Refund a purchase (clawback if settled)"
+  Write-Host "13. List payout requests"
+  Write-Host "14. Process payout (paid / rejected)"
+  Write-Host "15. Session report (who used what, how long)"
   Write-Host "0. Exit"
   $c = Read-Host "Choose"
   switch ($c) {
@@ -104,6 +110,14 @@ while ($true) {
     "7" { $e=Read-Host "Email"; $s=Read-Host "New status (active / frozen / fraud_suspected)"; Ensure-Row $e; Patch "credits" "?email=eq.$(Enc $e)" @{ status=$s } | Out-Null; Write-Host "  $e credits set to: $s" -ForegroundColor Yellow }
     "8" { Show-SuspiciousAccounts | Out-Null }
     "9" { $e=Read-Host "Email to remove credits from"; Remove-FraudCredits $e }
+    "10" { $r = Invoke-RestMethod -Uri "$url/rest/v1/rpc/settle_due" -Method POST -Body "{}" -ContentType "application/json" -Headers $H; Write-Host "  $($r)" -ForegroundColor Green }
+    "11" { Get-Rows "commissions" "?select=timestamp_et,affiliate_code,level,buyer_email,amount&order=id.desc&limit=30" | Format-Table }
+    "12" { $id=[int](Read-Host "Purchase id"); $r = Invoke-RestMethod -Uri "$url/rest/v1/rpc/refund_purchase" -Method POST -Body (@{ p_id=$id } | ConvertTo-Json) -ContentType "application/json" -Headers $H; Write-Host "  $($r)" -ForegroundColor Yellow }
+    "13" { Get-Rows "payouts" "?select=id,affiliate_code,amount,method,status,requested_at_et&order=id.desc&limit=30" | Format-Table }
+    "14" { $id=[int](Read-Host "Payout id"); $st=Read-Host "New status (paid / rejected)"; $prow=@(Get-Rows "payouts" "?select=*&id=eq.$id")[0];
+           Patch "payouts" "?id=eq.$id" @{ status=$st; processed_at_et=(ET) } | Out-Null
+           if ($st -eq "rejected") { $aff=@(Get-Rows "affiliates" "?select=paid_out&affiliate_code=eq.$($prow.affiliate_code)")[0]; $newpo=[math]::Max(0,[decimal]$aff.paid_out-[decimal]$prow.amount); Patch "affiliates" "?affiliate_code=eq.$($prow.affiliate_code)" @{ paid_out=$newpo } | Out-Null; Write-Host "  Rejected + funds returned to available." -ForegroundColor Yellow } else { Write-Host "  Marked PAID. Send money via $($prow.method) to $($prow.destination)" -ForegroundColor Green } }
+    "15" { Get-Rows "user_sessions" "?select=email,suite,duration_seconds,start_time_et&order=id.desc&limit=40" | Format-Table }
     "0" { exit }
   }
 }

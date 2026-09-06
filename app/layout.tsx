@@ -1,3 +1,5 @@
+import SessionTracker from './components/SessionTracker';
+import AffiliateWidget from './components/AffiliateWidget';
 import ReferralTracker from './components/ReferralTracker';
 import type { Metadata } from "next";
 import "./globals.css";
@@ -19,6 +21,8 @@ export default function RootLayout({
         className="min-h-screen flex"
         style={{ backgroundColor: "#020617", color: "#f8fafc" }}
       >`n        <ReferralTracker />
+        <AffiliateWidget />
+        <SessionTracker />
         <Sidebar />
         <div className="flex-1 overflow-y-auto">{children}</div>
       </body>
