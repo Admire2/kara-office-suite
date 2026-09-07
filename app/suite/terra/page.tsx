@@ -290,8 +290,8 @@ export default function TerraPage() {
   const [complexity, setComplexity] = useState<"simple" | "complex">("simple");
   const [codeSys, setCodeSys] = useState("US");
   const [freeChangeUsed, setFreeChangeUsed] = useState(false);
-  const regenPlan = (cs: string) => { CURRENT_CODE = cs; SKIP_PLAN_CHARGE = true; const b = Array.from(document.querySelectorAll("button")).find(x => (x.textContent || "").includes("Start Designing")); if (b) (b as HTMLButtonElement).click(); SKIP_PLAN_CHARGE = false; };
-  const onCodeChange = async (e: any) => { const next = e.target.value; if (next === codeSys) return; if (!freeChangeUsed) { setFreeChangeUsed(true); setCodeSys(next); regenPlan(next); } else { chargeCredits(5, "code_change"); setCodeSys(next); regenPlan(next); } };
+  
+  
     const imgBase = () => {
     try {
       const fi = document.querySelector('input[type=file]') as HTMLInputElement | null;
@@ -424,6 +424,7 @@ useEffect(() => {
     setBusy(false);
   };
 
+  const changeCodeSys = async (v: string) => { if (v === codeSys) return; if (freeChangeUsed) { chargeCredits(5, "code_change"); } else { setFreeChangeUsed(true); } setCodeSys(v); CURRENT_CODE = v; if (plan || answer) { setPlanBusy(true); setBusy(true); try { const prompt = plan ? 'RECALCULATE IN NEW CODE SYSTEM. Keep the same client intent. Output: #Goal, #Implementation plan.' : 'RECALCULATE IN NEW CODE SYSTEM. Keep the same client intent. Produce full engineering design with ## CONNECTIONS and ## ASSEMBLY sections.'; const r = await fetch("/api/terra", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt + "\n\nORIGINAL:\n" + (plan || answer) + "\n\n[NEW CODE SYSTEM: " + v + "] Recalculate all values in this code/unit system.", domain: domain }) }); const j = await r.json(); const t = j.answer || ""; if (plan) setPlan(t); else setAnswer(t); } catch (err) { alert("Recalculation failed: " + (err as any).message); } setPlanBusy(false); setBusy(false); } };
   const makePlan = async () => {
     if (!q.trim()) { alert("Write the client project / task in the top box first"); return; }
     chargeCredits(5, "plan"); const bt = ((document.querySelector("textarea") as HTMLTextAreaElement | null)?.value.trim() || ""); if (LASTBRIEF && bt && bt !== LASTBRIEF) clearAll(); setPlanBusy(true); setPlan("");
@@ -844,7 +845,7 @@ const downloadPdf = async (withDiy?: boolean) => {
             <div className="flex items-center justify-between">
               <p className="text-sm font-bold text-fuchsia-300">02 · PLAN — ready for your approval</p>
               <div className="flex gap-2">
-                <select value={codeSys} onChange={onCodeChange} title="Code system / units — 1 free change, then 5 credits" className="rounded-full border border-fuchsia-500/40 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">
+                <select value={codeSys} onChange={(e: any) => changeCodeSys(e.target.value)} title="Code system / units — 1 free change, then 5 credits" className="rounded-full border border-fuchsia-500/40 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">
                   {CODE_OPTIONS.map((o: any) => <option key={o.id} value={o.id} disabled={o.id === codeSys}>{o.label}{o.id === codeSys ? " ✓" : ""}</option>)}
                 </select>
                 <button onClick={startFromPlan} disabled={plan.indexOf("#") < 0} className="rounded-full bg-fuchsia-600 px-5 py-2 text-sm font-bold text-white hover:bg-fuchsia-500 disabled:opacity-40">▶ Approve → 03 DESIGN</button>
