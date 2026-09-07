@@ -311,7 +311,7 @@ useEffect(() => {
     const t = (e.target as HTMLElement).closest("button");
     if (!t) return;
     const txt = (t.textContent || "").toLowerCase();
-    if (txt.includes("⚡") || txt.includes("quick ask")) { if (txt && txt !== LASTCHIP) clearAll(); if (txt) LASTCHIP = txt; chargeCredits(15, "design_quick"); }
+    if (txt.includes("⚡") || txt.includes("quick ask")) { if (complexity === "complex") { alert("Quick asks are for simple projects only. For complex systems (turbines, plants, aircraft), use the full workflow: Start Designing → Plan → Approve."); return; } if (txt && txt !== LASTCHIP) clearAll(); if (txt) LASTCHIP = txt; chargeCredits(15, "design_quick"); }
   };
   document.addEventListener("click", onClick);
   return () => document.removeEventListener("click", onClick);
@@ -394,7 +394,7 @@ useEffect(() => {
     document.addEventListener("click", h, true);
     return () => document.removeEventListener("click", h, true);
   }, []);
-  const [domain, setDomain] = useState("Auto-detect (recommended)");
+  const [domain, setDomain] = useState("Auto-detect (recommended)");`n  const [complexity, setComplexity] = useState<"simple" | "complex">("simple");
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState("");
@@ -815,6 +815,14 @@ const downloadPdf = async (withDiy?: boolean) => {
         <div className="mt-3 flex flex-wrap gap-2">
           {CHIPS.map((c) => <button key={c} onClick={() => { setQ(c); ask(c); }} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs hover:bg-white/10">⚡ {c}</button>)}
         </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+  <span className="text-xs font-bold text-cyan-300">🎯 Project complexity:</span>
+  <select value={complexity} onChange={(e: any) => setComplexity(e.target.value)} className="rounded-full border border-fuchsia-500/40 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">
+    <option value="simple">Simple (brackets, PCBs, mechanisms) — quick asks allowed</option>
+    <option value="complex">Complex (turbines, plants, aircraft) — full workflow required</option>
+  </select>
+</div>
+
         <p className="mt-1 text-[10px] text-slate-500">⚡ chips = quick ask (skips the plan). For the full 01→05 flow: write the brief + press Start Designing with Rivet.</p>
 
         <div className="mt-4 rounded-xl border-2 border-purple-500/40 bg-purple-500/5 p-4">
