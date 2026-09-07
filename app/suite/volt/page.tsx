@@ -287,6 +287,7 @@ const CODE_OPTIONS = [
   { id: "IN", label: "India (IS · metric)" },
 ];
 export default function VoltPage() {
+  const [complexity, setComplexity] = useState<"simple" | "complex">("simple");
   const [codeSys, setCodeSys] = useState("US");
   const [freeChangeUsed, setFreeChangeUsed] = useState(false);
   const regenPlan = (cs: string) => { CURRENT_CODE = cs; SKIP_PLAN_CHARGE = true; const b = Array.from(document.querySelectorAll("button")).find(x => (x.textContent || "").includes("Start Designing")); if (b) (b as HTMLButtonElement).click(); SKIP_PLAN_CHARGE = false; };
@@ -310,7 +311,7 @@ useEffect(() => {
     const t = (e.target as HTMLElement).closest("button");
     if (!t) return;
     const txt = (t.textContent || "").toLowerCase();
-    if (txt.includes("⚡") || txt.includes("quick ask")) { if (txt && txt !== LASTCHIP) clearAll(); if (txt) LASTCHIP = txt; chargeCredits(15, "design_quick"); }
+    if (txt.includes("⚡") || txt.includes("quick ask")) { if (complexity === "complex") { alert("Quick asks are for simple projects only. For complex systems use the full workflow."); return; } if (txt && txt !== LASTCHIP) clearAll(); if (txt) LASTCHIP = txt; chargeCredits(15, "design_quick"); }
   };
   document.addEventListener("click", onClick);
   return () => document.removeEventListener("click", onClick);
@@ -765,6 +766,14 @@ const downloadPdf = async (withDiy?: boolean) => {
   const qbInput = "w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-purple-400";
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8">
+        <div className="sticky top-2 z-40 mt-3 mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-fuchsia-500/40 bg-slate-900/95 px-4 py-2 backdrop-blur">
+          <span className="text-xs font-bold text-cyan-300">🎯 Project complexity:</span>
+          <select value={complexity} onChange={(e: any) => setComplexity(e.target.value)} className="rounded-full border border-fuchsia-500/40 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">
+            <option value="simple">Simple - quick asks allowed</option>
+            <option value="complex">Complex (turbines, plants, aircraft) - full workflow required</option>
+          </select>
+        </div>
+
       <WalletBar />
       <div className="max-w-3xl mx-auto">
         <Link href="/suite/engineering" className="text-cyan-400 hover:underline text-sm">&larr; Back to Engineering Suite</Link>
