@@ -394,7 +394,8 @@ useEffect(() => {
     document.addEventListener("click", h, true);
     return () => document.removeEventListener("click", h, true);
   }, []);
-  const [domain, setDomain] = useState("Auto-detect (recommended)");`n  const [complexity, setComplexity] = useState<"simple" | "complex">("simple");
+  const [domain, setDomain] = useState("Auto-detect (recommended)");
+  const [complexity, setComplexity] = useState<"simple" | "complex">("simple");
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState("");
