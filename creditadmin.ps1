@@ -94,6 +94,8 @@ while ($true) {
   Write-Host "13. List payout requests"
   Write-Host "14. Process payout (paid / rejected)"
   Write-Host "15. Session report (who used what, how long)"
+  Write-Host "19. SHOW current email rate limit (per hour)"
+  Write-Host "20. SET email rate limit (per hour)"
   Write-Host "0. Exit"
   $c = Read-Host "Choose"
   switch ($c) {
@@ -118,6 +120,8 @@ while ($true) {
            Patch "payouts" "?id=eq.$id" @{ status=$st; processed_at_et=(ET) } | Out-Null
            if ($st -eq "rejected") { $aff=@(Get-Rows "affiliates" "?select=paid_out&affiliate_code=eq.$($prow.affiliate_code)")[0]; $newpo=[math]::Max(0,[decimal]$aff.paid_out-[decimal]$prow.amount); Patch "affiliates" "?affiliate_code=eq.$($prow.affiliate_code)" @{ paid_out=$newpo } | Out-Null; Write-Host "  Rejected + funds returned to available." -ForegroundColor Yellow } else { Write-Host "  Marked PAID. Send money via $($prow.method) to $($prow.destination)" -ForegroundColor Green } }
     "15" { Get-Rows "user_sessions" "?select=email,suite,duration_seconds,start_time_et&order=id.desc&limit=40" | Format-Table }
+    "19" { $tok = EnvVal "SUPABASE_MANAGEMENT_TOKEN"; $cfg = Invoke-RestMethod -Uri "https://api.supabase.com/v1/projects/volyupfeeujwiadjnhml/config/auth" -Headers @{ Authorization = "Bearer $tok" }; $k = ($cfg.PSObject.Properties | Where-Object { $_.Name -match "EMAIL_SENT" } | Select-Object -First 1).Name; Write-Host "  $($k): $($cfg.$k) emails/hour" -ForegroundColor Cyan }
+    "20" { $tok = EnvVal "SUPABASE_MANAGEMENT_TOKEN"; $n = [int](Read-Host "New emails-per-hour limit (Gmail ceiling ~20 sustained, 30 bursts OK)"); $cfg = Invoke-RestMethod -Uri "https://api.supabase.com/v1/projects/volyupfeeujwiadjnhml/config/auth" -Headers @{ Authorization = "Bearer $tok" }; $k = ($cfg.PSObject.Properties | Where-Object { $_.Name -match "EMAIL_SENT" } | Select-Object -First 1).Name; Invoke-RestMethod -Uri "https://api.supabase.com/v1/projects/volyupfeeujwiadjnhml/config/auth" -Method PATCH -Body (@{ $k = $n } | ConvertTo-Json) -ContentType "application/json" -Headers @{ Authorization = "Bearer $tok" } | Out-Null; Write-Host "  Rate limit set to $n emails/hour" -ForegroundColor Green }
     "0" { exit }
   }
 }
