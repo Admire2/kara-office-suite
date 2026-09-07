@@ -10,10 +10,11 @@ export default function AffiliateDashboard() {
   const [loading,setLoading]=useState(true); const [copied,setCopied]=useState(false);
   const [amount,setAmount]=useState(50); const [method,setMethod]=useState("paypal");
   const [dest,setDest]=useState(""); const [busy,setBusy]=useState(false);
+  const [firstName,setFirstName]=useState(""); const [lastName,setLastName]=useState("");
 
   useEffect(()=>{ setOrigin(window.location.origin);
     (async()=>{ const {data:{session}}=await supabase.auth.getSession();
-      if(session?.user){ setUser(session.user); await loadAll(session.user.email); }
+      if(session?.user){ setUser(session.user); await loadAll(session.user.email||""); }
       setLoading(false); })(); },[]);
 
   const loadAll = async (email:string) => {
@@ -25,24 +26,25 @@ export default function AffiliateDashboard() {
   };
 
   const join = async () => {
+    if(!firstName.trim()||!lastName.trim()){alert("Please enter your first and last name");return;}
     const code=user.email.split("@")[0].replace(/[^a-z0-9]/gi,"-").toLowerCase();
     const m=document.cookie.match(/(^| )fp_ref=([^;]+)/); const ref=m?decodeURIComponent(m[2]):"";
     let parent:any=null;
     if(ref){ const {data}=await supabase.from("affiliates").select("affiliate_code").eq("affiliate_code",ref).limit(1); if(data&&data.length>0) parent=ref; }
     const etNow=new Date().toLocaleString("en-US",{timeZone:"America/New_York",hour12:false});
-    const {error}=await supabase.from("affiliates").insert({email:user.email,affiliate_code:code,commission_rate:20,parent_code:parent,created_at_et:etNow});
-    if(!error) await loadAll(user.email); else alert(error.message);
+    const {error}=await supabase.from("affiliates").insert({email:user.email,affiliate_code:code,commission_rate:20,parent_code:parent,first_name:firstName,last_name:lastName,created_at_et:etNow});
+    if(!error) await loadAll(user.email||""); else alert(error.message);
   };
 
   const requestPayout = async () => {
     const available=Number(aff.total_earned||0)-Number(aff.paid_out||0);
     if(amount<50){ alert("Minimum payout is $50"); return; }
     if(amount>available){ alert("Exceeds available balance ($"+available.toFixed(2)+")"); return; }
-    if(!dest.trim()){ alert("Enter payout destination (PayPal email / US bank+routing / Wise / crypto address)"); return; }
+    if(!dest.trim()){ alert("Enter payout destination"); return; }
     setBusy(true);
     const etNow=new Date().toLocaleString("en-US",{timeZone:"America/New_York",hour12:false});
     const {error}=await supabase.from("payouts").insert({affiliate_code:aff.affiliate_code,email:user.email,amount,method,destination:dest,status:"pending",requested_at_et:etNow});
-    if(!error){ await supabase.from("affiliates").update({paid_out:Number(aff.paid_out||0)+amount}).eq("affiliate_code",aff.affiliate_code); await loadAll(user.email); }
+    if(!error){ await supabase.from("affiliates").update({paid_out:Number(aff.paid_out||0)+amount}).eq("affiliate_code",aff.affiliate_code); await loadAll(user.email||""); }
     else alert(error.message);
     setBusy(false);
   };
@@ -52,7 +54,7 @@ export default function AffiliateDashboard() {
   const renderTree=(code:string,depth:number):any=>{
     const a=allAff.find(x=>x.affiliate_code===code)||{} as any;
     return (<div key={code} style={{marginLeft:depth*22}}>
-      <div className="text-sm py-1">{depth>0?"└─ ":""}<span className="text-fuchsia-300 font-mono">{code}</span> <span className="text-slate-400">{a.email}</span> <span className="text-emerald-400">${Number(a.total_earned||0).toFixed(2)}</span></div>
+      <div className="text-sm py-1">{depth>0?"└─ ":""}<span className="text-fuchsia-300 font-mono">{code}</span> <span className="text-slate-400">{a.first_name||""} {a.last_name||""} ({a.email})</span> <span className="text-emerald-400">${Number(a.total_earned||0).toFixed(2)}</span></div>
       {kids(code).map(k=>renderTree(k.affiliate_code,depth+1))}
     </div>);
   };
@@ -63,11 +65,13 @@ export default function AffiliateDashboard() {
   return (
     <div className="min-h-screen bg-slate-950 text-white p-8">
       <h1 className="text-4xl font-bold mb-2">🤝 Affiliate Partner Dashboard</h1>
-      <p className="text-slate-400 mb-8">Welcome, {user.email}</p>
+      <p className="text-slate-400 mb-8">Welcome, {aff?.first_name||""} {aff?.last_name||""} ({user.email})</p>
       {!aff ? (
         <div className="max-w-md bg-slate-900 border border-fuchsia-500/30 rounded-xl p-8 text-center">
           <h2 className="text-2xl font-bold mb-3">Become an Affiliate Partner</h2>
           <p className="text-slate-400 mb-6">Earn a share of the 20% commission pool on every sale in your downline (up to 5 levels).</p>
+          <input value={firstName} onChange={e=>setFirstName(e.target.value)} placeholder="First Name" className="w-full p-3 mb-2 bg-slate-800 rounded" />
+          <input value={lastName} onChange={e=>setLastName(e.target.value)} placeholder="Last Name" className="w-full p-3 mb-4 bg-slate-800 rounded" />
           <button onClick={join} className="bg-fuchsia-600 hover:bg-fuchsia-500 px-8 py-3 rounded-full font-bold">Join the Program</button>
         </div>
       ) : (
