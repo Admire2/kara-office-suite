@@ -1,3 +1,5 @@
+import PromptLogger from "./components/PromptLogger";
+import ErrorCatcher from "./components/ErrorCatcher";
 import SessionTracker from './components/SessionTracker';
 import AffiliateWidget from './components/AffiliateWidget';
 import ReferralTracker from './components/ReferralTracker';
@@ -20,7 +22,9 @@ export default function RootLayout({
       <body
         className="min-h-screen flex"
         style={{ backgroundColor: "#020617", color: "#f8fafc" }}
-      >`n        <ReferralTracker />
+      >
+        <PromptLogger />
+        <ErrorCatcher />`n        <ReferralTracker />
         <AffiliateWidget />
         <SessionTracker />
         <Sidebar />
