@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useEffect, useState } from "react";
 
 const AFRICA = ["Nigeria","Kenya","South Africa","Ghana","Egypt","Ethiopia","Tanzania","Uganda","Rwanda","Senegal"];
@@ -103,7 +103,7 @@ export default function PartnersPage() {
         </div>
 
         <div className="mt-8 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-          <h3 className="font-bold text-amber-200">📦 Fulfillment Order Desk — tracked orders through FounderPilot</h3>
+          <h3 className="font-bold text-amber-200">📦 Fulfillment Order Desk — tracked orders through FounderPilot · <a href="/suite/maxi/sourcing" className="text-cyan-300 underline">supplier not listed? Sourcing Search</a></h3>
           <p className="mt-1 text-xs text-slate-400">We route your order to the partner, track every status (requested → quoted → ordered → fulfilled), and keep the full history for both sides.</p>
           <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
             <select value={orderPartner} onChange={(e) => setOrderPartner(e.target.value)} className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-xs">

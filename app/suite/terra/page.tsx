@@ -416,7 +416,7 @@ useEffect(() => {
     try {
       const r = await fetch("/api/terra", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: text, domain: domain }) });
       const j = await r.json();
-      setAnswer(j.answer || "No response.");
+      setAnswer(j.answer || "No response."); try { localStorage.setItem("fp_snap_terra", JSON.stringify({ ts: new Date().toISOString(), q: text, answer: j.answer || "" })); } catch (e) {}
       setProvider(j.provider || "");
       setStamp(new Date().toLocaleString());
       setTimeout(() => { const el = document.getElementById("design-card"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 300);

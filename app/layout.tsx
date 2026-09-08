@@ -1,3 +1,4 @@
+import Orchestrator from "./components/Orchestrator";
 import PromptLogger from "./components/PromptLogger";
 import ErrorCatcher from "./components/ErrorCatcher";
 import SessionTracker from './components/SessionTracker';
@@ -29,7 +30,8 @@ export default function RootLayout({
         <SessionTracker />
         <Sidebar />
         <div className="flex-1 overflow-y-auto">{children}</div>
-      </body>
+            <Orchestrator />
+    </body>
     </html>
   );
 }

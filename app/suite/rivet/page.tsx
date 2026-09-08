@@ -324,7 +324,7 @@ useEffect(() => {
     if (!t) return;
     const txt = (t.textContent || "").toLowerCase();
     if (txt.includes("freecad") || txt.includes("outputs")) chargeCredits(5, "export");
-    else if (txt.includes("print pack")) chargeCredits(5, "print_pack");
+    else if (txt.includes("print pack")) chargeCredits(5, "print_pack"); saveServer({ brief: q, design: answer, report: report, build: true }); window.dispatchEvent(new Event("fp-snap-updated")); try { const k = "fp_snap_" + (window.location.pathname.split("/")[2] || "suite"); const sv = localStorage.getItem(k); if (sv) { const j2 = JSON.parse(sv); j2.build = true; j2.buildTs = new Date().toISOString(); localStorage.setItem(k, JSON.stringify(j2)); } else { localStorage.setItem(k, JSON.stringify({ ts: new Date().toISOString(), q: ((document.querySelector("textarea") as HTMLTextAreaElement | null) || { value: "" }).value, answer: "", build: true, buildTs: new Date().toISOString() })); } } catch (e) {}
   };
   document.addEventListener("click", onClick);
   return () => document.removeEventListener("click", onClick);
@@ -421,14 +421,23 @@ useEffect(() => {
   const [qbProd, setQbProd] = useState("");
   const [vendor, setVendor] = useState("");
   const [vendorBusy, setVendorBusy] = useState(false);
+  const [snap, setSnap] = useState<any>(null);
+  const [pid, setPid] = useState("");
+  const [projects, setProjects] = useState<any[]>([]);
+  const [codeInput, setCodeInput] = useState("");
 
+  useEffect(() => { try { const sv = localStorage.getItem("fp_snap_rivet"); if (sv) setSnap(JSON.parse(sv)); } catch (e) {} }, []);
+  const ensurePid = () => { let c = ""; try { c = localStorage.getItem("fp_pid_rivet") || ""; } catch (e) {} if (!c) { const t = Date.now().toString().slice(-10); let r = ""; for (let i = 0; i < 6; i++) { r += Math.floor(Math.random() * 10); } const raw = (t + r).slice(0, 16); c = raw.slice(0, 4) + "-" + raw.slice(4, 8) + "-" + raw.slice(8, 12) + "-" + raw.slice(12, 16); try { localStorage.setItem("fp_pid_rivet", c); } catch (e) {} } return c; };
+  const saveServer = async (extra: any) => { try { let em = ""; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i) || ""; if (k.startsWith("sb-") && k.endsWith("-auth-token")) { const j3 = JSON.parse(localStorage.getItem(k) || "null"); em = (j3 && j3.user && j3.user.email) || ""; if (em) break; } } let dv = ""; try { dv = localStorage.getItem("fp_device_id") || ""; } catch (e) {} await fetch("/api/snapshot", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.assign({ code: ensurePid(), email: em, suite: "rivet", device: dv }, extra)) }); } catch (e) {} };
+  const restoreByCode = async (code: string) => { try { const r = await fetch("/api/snapshot?code=" + encodeURIComponent(code.replace(/[^0-9-]/g, ""))); const j4 = await r.json(); if (j4.row) { setQ(j4.row.brief || ""); setAnswer(j4.row.design_text || ""); setReport(j4.row.report_text || ""); setPlan(j4.row.plan_text || ""); setPid(j4.row.project_code); try { localStorage.setItem("fp_pid_rivet", j4.row.project_code); localStorage.setItem("fp_snap_rivet", JSON.stringify({ ts: j4.row.updated_at_et, q: j4.row.brief, answer: j4.row.design_text, build: j4.row.build_done })); } catch (e) {} setSnap(null); alert("Project restored WORD-FOR-WORD from your cloud save."); } else { alert("No project found for that code."); } } catch (e) { alert("Restore failed - check connection."); } };
+  useEffect(() => { try { const c0 = localStorage.getItem("fp_pid_rivet"); if (c0) setPid(c0); } catch (e) {} (async () => { try { let em = ""; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i) || ""; if (k.startsWith("sb-") && k.endsWith("-auth-token")) { const j5 = JSON.parse(localStorage.getItem(k) || "null"); em = (j5 && j5.user && j5.user.email) || ""; if (em) break; } } if (em) { const r = await fetch("/api/snapshot?email=" + encodeURIComponent(em)); const j6 = await r.json(); setProjects(j6.rows || []); } } catch (e) {} })(); }, []);
   const ask = async (text: string) => {
     if (!text.trim() || busy) return;
     setBusy(true); setAnswer(""); setReport(""); setReview("");
     try {
       const r = await fetch("/api/rivet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: text, domain: domain }) });
       const j = await r.json();
-      setAnswer(j.answer || "No response.");
+      setAnswer(j.answer || "No response."); setPid(ensurePid()); saveServer({ brief: text, design: j.answer || "" }); window.dispatchEvent(new Event("fp-snap-updated")); try { localStorage.setItem("fp_snap_rivet", JSON.stringify({ ts: new Date().toISOString(), q: text, answer: j.answer || "" })); } catch (e) {}
       setProvider(j.provider || "");
       setStamp(new Date().toLocaleString());
       setTimeout(() => { const el = document.getElementById("design-card"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 300);
@@ -462,7 +471,7 @@ useEffect(() => {
     try {
       const r = await fetch("/api/rivet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt + "\n\n[CLIENT SELECTED CODE SYSTEM: " + CURRENT_CODE + "]", domain: domain }) });
       const j = await r.json();
-      if (j.answer) { chargeCredits(5, "report"); setReport(j.answer); } else { setReport("Report generation failed - try again."); }
+      if (j.answer) { chargeCredits(5, "report"); setReport(j.answer); saveServer({ brief: q, design: answer, report: j.answer }); } else { setReport("Report generation failed - try again."); }
     } catch (e) { setReport("Report generation failed - try again."); }
     setReportBusy(false);
   };
@@ -762,6 +771,7 @@ const downloadPdf = async (withDiy?: boolean) => {
     const yRef = { y: y };
     drawDiagramPdf(page, sectionRows(norm(src), "CONNECTIONS"), "SCHEMATIC - PIN TO PIN", M, maxW, yRef, ensure, bold, font);
     drawDiagramPdf(page, sectionRows(norm(src), "ASSEMBLY"), "ASSEMBLY - HOW PARTS ATTACH", M, maxW, yRef, ensure, bold, font);
+    if (pid) page.drawText(ws("Project code: " + pid + "  - restore anytime at FounderPilot"), { x: M, y: 54, size: 8, font: font, color: rgb(0.3, 0.3, 0.3) });
     page.drawText(ws("Powered by FounderPilot Engineering Suite"), { x: M, y: 40, size: 8, font: font, color: rgb(0.5, 0.5, 0.5) });
     const bytes = await doc.save();
     const blob = new Blob([bytes as any], { type: "application/pdf" });
@@ -815,6 +825,8 @@ const downloadPdf = async (withDiy?: boolean) => {
           />
         </div>
         01 · PROJECT BRIEF — the client&apos;s project / task</label>
+        {snap && !q && !answer && (<div className="mb-3 rounded-xl border border-cyan-500/40 bg-cyan-500/10 p-3"><p className="text-xs font-bold text-cyan-200">Welcome back - project saved {new Date(snap.ts).toLocaleString()} on this device{snap.build ? " (build pack downloaded)" : ""}.</p><p className="mt-1 text-[11px] text-slate-400">Restore for WORD-FOR-WORD similarity with your downloaded pack. Starting fresh gives a similar but NOT identical design.</p><div className="mt-2 flex gap-2"><button onClick={() => { setQ(snap.q || ""); setAnswer(snap.answer || ""); setSnap(null); }} className="rounded-lg bg-cyan-500 px-3 py-1.5 text-xs font-bold text-slate-900">Restore last project</button><button onClick={() => { localStorage.removeItem("fp_snap_rivet"); setSnap(null); }} className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-bold text-slate-300">Start fresh</button></div></div>)}
+        {!q && !answer && (<div className="mb-3 rounded-xl border border-white/10 bg-white/5 p-3"><p className="text-[11px] font-bold text-slate-300">🔄 Continuing from another device? Enter your 16-digit project code:</p><div className="mt-2 flex gap-2"><input value={codeInput} onChange={(e) => setCodeInput(e.target.value)} placeholder="e.g. 2609-0915-4821-0037" className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm" /><button onClick={() => restoreByCode(codeInput)} className="rounded-lg bg-cyan-500 px-4 py-2 text-xs font-bold text-slate-900">Restore</button></div>{projects.length > 0 && (<div className="mt-3"><p className="text-[11px] font-bold text-slate-300">📚 Your saved projects (this login):</p><div className="mt-1 flex flex-wrap gap-2">{projects.map((pr: any) => (<button key={pr.id} onClick={() => restoreByCode(pr.project_code)} className="rounded-full border border-cyan-500/40 px-3 py-1 text-[10px] font-bold text-cyan-200">{pr.project_code} · {(pr.brief || "").substring(0, 24)}</button>))}</div></div>)}</div>)}
         <textarea value={q} onChange={(e) => setQ(e.target.value)} rows={4} placeholder="Client project / task... e.g. Make me a temperature and humidity sensor node with WiFi and Bluetooth, powered by USB-C (5V), for consumer use." className="mt-2 w-full rounded-xl border border-white/10 bg-slate-900 p-4 text-sm outline-none focus:border-cyan-400" />
         <div className="mt-3 flex flex-wrap gap-2">
           {CHIPS.map((c) => <button key={c} onClick={() => { setQ(c); ask(c); }} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs hover:bg-white/10">⚡ {c}</button>)}
@@ -875,6 +887,7 @@ const downloadPdf = async (withDiy?: boolean) => {
 
         {answer && (
           <div id="design-card" className="mt-6 rounded-xl border border-white/10 bg-white/5 p-6">
+            {pid && (<p className="mt-1 text-[10px] font-bold text-cyan-300">🎫 Project code: {pid} — saved to your cloud history. Enter it on ANY device (with your login) to restore this exact design word-for-word.</p>)}
             <h3 className="text-lg font-bold text-cyan-300">03 · DESIGN — Rivet&apos;s Engineering Answer · Rev {String.fromCharCode(65 + rev)}</h3>
             <div className="mt-3 whitespace-pre-wrap text-sm text-slate-200">{answer}</div>
             <div className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3">

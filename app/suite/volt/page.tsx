@@ -323,7 +323,7 @@ useEffect(() => {
     if (!t) return;
     const txt = (t.textContent || "").toLowerCase();
     if (txt.includes("freecad") || txt.includes("outputs")) chargeCredits(5, "export");
-    else if (txt.includes("print pack")) chargeCredits(5, "print_pack");
+    else if (txt.includes("print pack")) chargeCredits(5, "print_pack"); try { const k = "fp_snap_" + (window.location.pathname.split("/")[2] || "suite"); const sv = localStorage.getItem(k); if (sv) { const j2 = JSON.parse(sv); j2.build = true; j2.buildTs = new Date().toISOString(); localStorage.setItem(k, JSON.stringify(j2)); } else { localStorage.setItem(k, JSON.stringify({ ts: new Date().toISOString(), q: ((document.querySelector("textarea") as HTMLTextAreaElement | null) || { value: "" }).value, answer: "", build: true, buildTs: new Date().toISOString() })); } } catch (e) {}
   };
   document.addEventListener("click", onClick);
   return () => document.removeEventListener("click", onClick);
@@ -427,7 +427,7 @@ useEffect(() => {
     try {
       const r = await fetch("/api/volt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: text, domain: domain }) });
       const j = await r.json();
-      setAnswer(j.answer || "No response.");
+      setAnswer(j.answer || "No response."); try { localStorage.setItem("fp_snap_volt", JSON.stringify({ ts: new Date().toISOString(), q: text, answer: j.answer || "" })); } catch (e) {}
       setProvider(j.provider || "");
       setStamp(new Date().toLocaleString());
       setTimeout(() => { const el = document.getElementById("design-card"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 300);
