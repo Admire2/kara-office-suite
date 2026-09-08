@@ -287,6 +287,7 @@ const CODE_OPTIONS = [
   { id: "IN", label: "India (IS · metric)" },
 ];
 export default function RivetPage() {
+  const [complexity, setComplexity] = useState<"simple" | "complex">("simple");
   const [codeSys, setCodeSys] = useState("US");
   const [freeChangeUsed, setFreeChangeUsed] = useState(false);
   const regenPlan = (cs: string) => { CURRENT_CODE = cs; SKIP_PLAN_CHARGE = true; const b = Array.from(document.querySelectorAll("button")).find(x => (x.textContent || "").includes("Start Designing")); if (b) (b as HTMLButtonElement).click(); SKIP_PLAN_CHARGE = false; };
@@ -311,7 +312,7 @@ useEffect(() => {
     const t = (e.target as HTMLElement).closest("button");
     if (!t) return;
     const txt = (t.textContent || "").toLowerCase();
-    if (txt.includes("⚡") || txt.includes("quick ask")) { if (complexity === "complex") { alert("Quick asks are for simple projects only. For complex systems (turbines, plants, aircraft), use the full workflow: Start Designing → Plan → Approve."); return; } if (txt && txt !== LASTCHIP) clearAll(); if (txt) LASTCHIP = txt; chargeCredits(15, "design_quick"); }
+    if (txt.includes("⚡") || txt.includes("quick ask")) { if (complexity === "complex") { alert("Quick asks are for simple projects only. For complex systems use the full workflow: Brief -> Plan -> Design."); return; } if (txt && txt !== LASTCHIP) clearAll(); if (txt) LASTCHIP = txt; chargeCredits(15, "design_quick"); }
   };
   document.addEventListener("click", onClick);
   return () => document.removeEventListener("click", onClick);
@@ -395,7 +396,6 @@ useEffect(() => {
     return () => document.removeEventListener("click", h, true);
   }, []);
   const [domain, setDomain] = useState("Auto-detect (recommended)");
-  const [complexity, setComplexity] = useState<"simple" | "complex">("simple");
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState("");
@@ -436,11 +436,11 @@ useEffect(() => {
     setBusy(false);
   };
 
-  const changeCodeSys = async (v: string) => { if (v === codeSys) return; if (freeChangeUsed) { chargeCredits(5, "code-change"); } else { setFreeChangeUsed(true); } setCodeSys(v); CURRENT_CODE = v; if (plan || answer) { setPlanBusy(true); setBusy(true); try { const prompt = plan ? "RECALCULATE IN NEW CODE SYSTEM. You MUST actively convert all physical dimensions, trace widths, and temperatures to the new unit system. Output ONLY: #Goal, #Implementation plan." : "RECALCULATE IN NEW CODE SYSTEM. You MUST actively convert all physical dimensions, trace widths, and temperatures to the new unit system. Produce full engineering design with ## CONNECTIONS and ## ASSEMBLY sections."; const r = await fetch("/api/rivet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt + "\n\nORIGINAL:\n" + (plan || answer) + "\n\n[NEW CODE SYSTEM: " + v + "] Recalculate all values in this code/unit system.", domain: domain }) }); const j = await r.json(); const t = j.answer || ""; if (plan) setPlan(t); else setAnswer(t); } catch (err) { alert("Recalculation failed: " + (err as any).message); } setPlanBusy(false); setBusy(false); } };
+  const changeCodeSys = async (v: string) => { if (v === codeSys) return; if (freeChangeUsed) { chargeCredits(5, "code-change"); } else { setFreeChangeUsed(true); } setCodeSys(v); CURRENT_CODE = v; if (plan || answer) { setPlanBusy(true); setBusy(true); try { const prompt = plan ? "RECALCULATE IN NEW CODE SYSTEM. Keep the same client intent. Output: #Goal, #Implementation plan." : "RECALCULATE IN NEW CODE SYSTEM. Keep the same client intent. Produce full engineering design with ## CONNECTIONS and ## ASSEMBLY sections."; const r = await fetch("/api/rivet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt + "\n\nORIGINAL:\n" + (plan || answer) + "\n\n[NEW CODE SYSTEM: " + v + "] Recalculate all values in this code/unit system.", domain: domain }) }); const j = await r.json(); const t = j.answer || ""; if (plan) setPlan(t); else setAnswer(t); } catch (err) { alert("Recalculation failed: " + (err as any).message); } setPlanBusy(false); setBusy(false); } };
   const makePlan = async () => {
     if (!q.trim()) { alert("Write the client project / task in the top box first"); return; }
     chargeCredits(5, "plan"); const bt = ((document.querySelector("textarea") as HTMLTextAreaElement | null)?.value.trim() || ""); if (LASTBRIEF && bt && bt !== LASTBRIEF) clearAll(); setPlanBusy(true); setPlan("");
-    const prompt = "PLAN MODE. Client project brief: " + q + "\nProject constraints: Environment & use: " + (qbEnv || "unspecified") + " | Target unit cost: " + (qbBudget || "unspecified") + " | Production volume: " + (qbVolume || "unspecified") + " | Certifications & standards: " + (qbCerts || "unspecified") + " | Production type: " + (qbProd || "unspecified") + ".\nIf production type is Prototype, favor hand-solder-friendly parts and breakout modules. If Volume production, favor reel-packed parts, DFM notes and test-jig planning.\nOutput a '#Components by subsystem' section FIRST - list every major component per subsystem (compressor, combustor, turbine section, shaft & bearings, fuel system, lube system, controls & instrumentation, enclosure & exhaust), each with material + estimated qty. Then output two more sections. First line '#Goal' then a one-paragraph goal. Then line '#Implementation plan' then numbered steps (1., 1.1, 1.2, 2., 2.1...). Tailor component choices to volume and budget, environment (IP rating, temperature range), and certifications (compliance path). Mention example core components (MCU, sensor, power IC, radio). Keep it short and approval-ready. No extra commentary. STRICT RULE: DO NOT output ## SCHEMATIC, ## PCB LAYOUT, ## BOM tables, ## FIRMWARE, ## CONNECTIONS, or ## ASSEMBLY yet. Those are strictly reserved for the 03 DESIGN stage.";
+    const prompt = "PLAN MODE. Client project brief: " + q + "\nProject constraints: Environment & use: " + (qbEnv || "unspecified") + " | Target unit cost: " + (qbBudget || "unspecified") + " | Production volume: " + (qbVolume || "unspecified") + " | Certifications & standards: " + (qbCerts || "unspecified") + " | Production type: " + (qbProd || "unspecified") + ".\nIf production type is Prototype, favor hand-solder-friendly parts and breakout modules. If Volume production, favor reel-packed parts, DFM notes and test-jig planning.\nOutput exactly two sections. First line '#Goal' then a one-paragraph goal. Then line '#Implementation plan' then numbered steps (1., 1.1, 1.2, 2., 2.1...). Tailor component choices to volume and budget, environment (IP rating, temperature range), and certifications (compliance path). Mention example core components (MCU, sensor, power IC, radio). Keep it short and approval-ready. No extra commentary.";
     try {
       const r = await fetch("/api/rivet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt + "\n\n[CLIENT SELECTED CODE SYSTEM: " + CURRENT_CODE + "]", domain: domain }) });
       const j = await r.json();
@@ -816,15 +816,14 @@ const downloadPdf = async (withDiy?: boolean) => {
         <div className="mt-3 flex flex-wrap gap-2">
           {CHIPS.map((c) => <button key={c} onClick={() => { setQ(c); ask(c); }} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs hover:bg-white/10">⚡ {c}</button>)}
         </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
   <span className="text-xs font-bold text-cyan-300">🎯 Project complexity:</span>
   <select value={complexity} onChange={(e: any) => setComplexity(e.target.value)} className="rounded-full border border-fuchsia-500/40 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">
     <option value="simple">Simple (brackets, PCBs, mechanisms) — quick asks allowed</option>
     <option value="complex">Complex (turbines, plants, aircraft) — full workflow required</option>
   </select>
 </div>
-
-        <p className="mt-1 text-[10px] text-slate-500">⚡ chips = quick ask (skips the plan). For the full 01→05 flow: write the brief + press Start Designing with Rivet.</p>
+          <p className="mt-1 text-[10px] text-slate-500">⚡ chips = quick ask (skips the plan). For the full 01→05 flow: write the brief + press Start Designing with Rivet.</p>
 
         <div className="mt-4 rounded-xl border-2 border-purple-500/40 bg-purple-500/5 p-4">
           <p className="text-sm font-bold text-purple-300">Project constraints — makes the design specific, not generic</p>
@@ -858,7 +857,7 @@ const downloadPdf = async (withDiy?: boolean) => {
             <div className="flex items-center justify-between">
               <p className="text-sm font-bold text-fuchsia-300">02 · PLAN — ready for your approval</p>
               <div className="flex gap-2">
-                <select value={codeSys} onChange={async (e: any) => { const v = e.target.value; if (v === codeSys) return; if (freeChangeUsed) { chargeCredits(5, "code-change"); } else { setFreeChangeUsed(true); } setCodeSys(v); CURRENT_CODE = v; if (plan || answer) { setPlanBusy(true); setBusy(true); try { const prompt = plan ? "RECALCULATE IN NEW CODE SYSTEM. You MUST actively convert all physical dimensions, trace widths, and temperatures to the new unit system. Output ONLY: #Goal, #Implementation plan." : "RECALCULATE IN NEW CODE SYSTEM. You MUST actively convert all physical dimensions, trace widths, and temperatures to the new unit system. Produce full engineering design with ## CONNECTIONS and ## ASSEMBLY sections."; const r = await fetch("/api/rivet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt + "\n\nORIGINAL:\n" + (plan || answer) + "\n\n[NEW CODE SYSTEM: " + v + "] Recalculate all values in this code/unit system.", domain: domain }) }); const j = await r.json(); const t = j.answer || ""; if (plan) setPlan(t); else setAnswer(t); } catch (err) { alert("Recalculation failed: " + (err as any).message); } setPlanBusy(false); setBusy(false); } }} title="Code system / units — 1 free change, then 5 credits" className="rounded-full border border-fuchsia-500/40 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">
+                <select value={codeSys} onChange={async (e: any) => { const v = e.target.value; if (v === codeSys) return; if (freeChangeUsed) { chargeCredits(5, "code-change"); } else { setFreeChangeUsed(true); } setCodeSys(v); CURRENT_CODE = v; if (plan || answer) { setPlanBusy(true); setBusy(true); try { const prompt = plan ? "RECALCULATE IN NEW CODE SYSTEM. Keep the same client intent. Output: #Goal, #Implementation plan." : "RECALCULATE IN NEW CODE SYSTEM. Keep the same client intent. Produce full engineering design with ## CONNECTIONS and ## ASSEMBLY sections."; const r = await fetch("/api/rivet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: prompt + "\n\nORIGINAL:\n" + (plan || answer) + "\n\n[NEW CODE SYSTEM: " + v + "] Recalculate all values in this code/unit system.", domain: domain }) }); const j = await r.json(); const t = j.answer || ""; if (plan) setPlan(t); else setAnswer(t); } catch (err) { alert("Recalculation failed: " + (err as any).message); } setPlanBusy(false); setBusy(false); } }} title="Code system / units — 1 free change, then 5 credits" className="rounded-full border border-fuchsia-500/40 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">
                   {CODE_OPTIONS.map((o: any) => <option key={o.id} value={o.id} disabled={o.id === codeSys}>{o.label}{o.id === codeSys ? " ✓" : ""}</option>)}
                 </select>
                 <button onClick={startFromPlan} disabled={plan.indexOf("#") < 0} className="rounded-full bg-fuchsia-600 px-5 py-2 text-sm font-bold text-white hover:bg-fuchsia-500 disabled:opacity-40">▶ Approve → 03 DESIGN</button>
