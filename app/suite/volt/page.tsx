@@ -767,13 +767,7 @@ const downloadPdf = async (withDiy?: boolean) => {
   const qbInput = "w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-purple-400";
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8">
-        <div className="sticky top-2 z-40 mt-3 mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-fuchsia-500/40 bg-slate-900/95 px-4 py-2 backdrop-blur">
-          <span className="text-xs font-bold text-cyan-300">🎯 Project complexity:</span>
-          <select value={complexity} onChange={(e: any) => setComplexity(e.target.value)} className="rounded-full border border-fuchsia-500/40 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">
-            <option value="simple">Simple - quick asks allowed</option>
-            <option value="complex">Complex (turbines, plants, aircraft) - full workflow required</option>
-          </select>
-        </div>
+        
 
       <WalletBar />
       <div className="max-w-3xl mx-auto">
@@ -823,11 +817,19 @@ const downloadPdf = async (withDiy?: boolean) => {
         <div className="mt-3 flex flex-wrap gap-2">
           {CHIPS.map((c) => <button key={c} onClick={() => { setQ(c); ask(c); }} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs hover:bg-white/10">⚡ {c}</button>)}
         </div>
-        <p className="mt-1 text-[10px] text-slate-500">⚡ chips = quick ask (skips the plan). For the full 01→05 flow: write the brief + press Start Designing with Volt.</p>
+        <div className="sticky top-2 z-40 mt-3 mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-fuchsia-500/40 bg-slate-900/95 px-4 py-2 backdrop-blur">
+          <span className="text-xs font-bold text-cyan-300">🎯 Project complexity:</span>
+          <select value={complexity} onChange={(e: any) => setComplexity(e.target.value)} className="rounded-full border border-fuchsia-500/40 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">
+            <option value="simple">Simple - quick asks allowed</option>
+            <option value="complex">Complex (turbines, plants, aircraft) - full workflow required</option>
+          </select>
+        </div>
+          <p className="mt-1 text-[10px] text-slate-500">⚡ chips = quick ask (skips the plan). For the full 01→05 flow: write the brief + press Start Designing with Volt.</p>
 
         <div className="mt-4 rounded-xl border-2 border-purple-500/40 bg-purple-500/5 p-4">
           <p className="text-sm font-bold text-purple-300">Project constraints — makes the design specific, not generic</p>
           <p className="mt-1 text-xs text-slate-400">Same pattern as Idea Validator & Business Model: brief + context = a tailored plan.</p>
+          <div className="sticky top-2 z-40 mb-3 mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-fuchsia-500/40 bg-slate-900/95 px-4 py-2 backdrop-blur"><span className="text-xs font-bold text-cyan-300">️ Units / code system:</span><select value={codeSys} onChange={(e: any) => changeCodeSys(e.target.value)} className="rounded-full border border-fuchsia-500/40 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">{CODE_OPTIONS.map((o: any) => <option key={o.id} value={o.id} disabled={o.id === codeSys}>{o.label}{o.id === codeSys ? " ✓" : ""}</option>)}</select><span className="text-[10px] text-slate-500">1st change free, then 5 credits — existing output recalculates</span></div>
           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
             <input value={qbEnv} onChange={(e) => setQbEnv(e.target.value)} placeholder="Environment & use (e.g. outdoor industrial, medical, consumer indoor)" className={qbInput} />
             <input value={qbBudget} onChange={(e) => setQbBudget(e.target.value)} placeholder="Target unit cost (e.g. under $2.50/W installed)" className={qbInput} />
