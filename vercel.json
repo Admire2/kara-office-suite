@@ -2,11 +2,11 @@
     "crons":  [
                   {
                       "path":  "/api/admin/settle?key=founder2026",
-                      "schedule":  "0 7 * * *"
+                      "schedule": "0 4 * * *"
                   },
                   {
                       "path":  "/api/karakata/agents/run",
-                      "schedule":  "0 * * * *"
+                      "schedule": "0 4 * * *"
                   }
               ]
 }
