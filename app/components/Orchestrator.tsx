@@ -57,6 +57,8 @@ export default function Orchestrator() {
 
   let suggestion: any = null;
   if (pathname.indexOf("/ideavalidator") >= 0) suggestion = { icon: "📊", text: "Idea validated? Next: map the Business Model", href: "/business", act: "nav" };
+  else if (pathname.indexOf("/suite/marketplace") >= 0) suggestion = { icon: "🛒", text: "KaraKata: describe your goods or service roughly - get a listing, a price band, and a quote ready to send.", act: "scroll" };
+  else if (pathname.indexOf("/suite/ilera") >= 0) suggestion = { icon: "🩺", text: "Type your symptom brief + vitals below - iLera builds your pre-visit read before the doctor.", act: "scroll" };
   else if (pathname.indexOf("/business") >= 0) suggestion = { icon: "🛠️", text: "Model ready? Next: engineer the product", href: "/suite/engineering", act: "nav" };
   else if (onSuite && stage === 1) suggestion = { icon: "📝", text: "Step 01 first: write your project brief below (or upload a photo). Sourcing unlocks only AFTER 05 BUILD.", act: "brief" };
   else if (onSuite && stage === 2) suggestion = { icon: "📦", text: "Design in progress. Next: download any 05 BUILD pack - it unlocks sourcing instantly.", act: "build" };
@@ -65,6 +67,7 @@ export default function Orchestrator() {
 
   const go = () => {
     if (suggestion.act === "nav") { window.location.href = suggestion.href; return; }
+    if (suggestion.act === "scroll") { const g = (document.querySelector("main textarea") || document.querySelector("main .grid")) as any; if (g) { g.scrollIntoView({ behavior: "smooth", block: "center" }); if (g.focus) g.focus(); } return; }
     if (suggestion.act === "brief") {
       setWarn("Finish Step 01: write the brief below, then run a design. Order: 01 Brief, 03 Design, 04 Sheet, 05 BUILD, then sourcing.");
       const ta = document.querySelector("textarea");

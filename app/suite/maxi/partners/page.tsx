@@ -1,4 +1,5 @@
 "use client";
+import WalletBar from "@/app/components/WalletBar";
 import { useEffect, useState } from "react";
 
 const AFRICA = ["Nigeria","Kenya","South Africa","Ghana","Egypt","Ethiopia","Tanzania","Uganda","Rwanda","Senegal"];
@@ -61,6 +62,8 @@ export default function PartnersPage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8">
+      <WalletBar />
+
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold"> FounderPilot Certified Partner Network</h1>
         <p className="mt-2 text-sm text-slate-400">Your location: {(geo.city ? geo.city + ", " : "") + (geo.country || "detecting...")} — partners sorted nearest-first, then best-price hubs.</p>

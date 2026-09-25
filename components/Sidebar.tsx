@@ -11,7 +11,8 @@ const links = [
   { href: "/auth", label: "Sign in / Account", icon: "🔐", highlight: false },
   { href: "/team", label: "My Team", icon: "👥", highlight: false },
   { href: "/contact", label: "Contact & Support", icon: "📬", highlight: false },
-  { href: "/suite", label: "Business Suite", icon: "⭐", highlight: true },
+  { href: "/suite/business", label: "Business Suite", icon: "⭐", highlight: true },
+  { href: "/suite/office", label: "Office Suite", icon: "🗂️", highlight: true },
 ];
 
 export default function Sidebar() {
@@ -24,7 +25,7 @@ export default function Sidebar() {
   return (
     <aside className="w-64 border-r border-white/10 bg-slate-900/50 p-6 hidden md:block">
       <div className="mb-8">
-        <Link href="/" className="block">
+        <Link href="/suite/engineering" className="block">
           <p className="text-sm uppercase tracking-[0.2em] text-cyan-400">FounderPilot</p>
           <h1 className="text-xl font-bold mt-1">AI Suite</h1>
         </Link>
@@ -54,6 +55,11 @@ export default function Sidebar() {
       </nav>
       <div className="mt-8 pt-8 border-t border-white/10">
         <Link href="/suite/engineering" className="mt-3 flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/20"><span>🛠️</span><span>Engineering Suite</span><span className="ml-auto rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">NEW</span></Link>
+<Link href="/suite/healthcare" className="mt-3 flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/20"><span>🩺</span><span>Healthcare Suite</span><span className="ml-auto rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">NEW</span></Link>
+<Link href="/suite/ounje" className="mt-3 flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/20"><span>🍲</span><span>Nutrition Suite</span><span className="ml-auto rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">NEW</span></Link>
+<Link href="/suite/marketplace" className="mt-3 flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/20"><span>🛒</span><span>Marketplace Suite</span><span className="ml-auto rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">NEW</span></Link>
+<Link href="/karakata" className="block rounded-lg bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 ml-2">🛒 Open the Market →</Link>
+
 <Link href="/" className="text-sm text-slate-400 hover:text-white flex items-center gap-2">
            ← Back to Home
          </Link>

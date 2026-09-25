@@ -1,3 +1,5 @@
+import AskBox from "@/app/components/AskBox";
+import Footer from "@/app/components/Footer";
 import Orchestrator from "./components/Orchestrator";
 import PromptLogger from "./components/PromptLogger";
 import ErrorCatcher from "./components/ErrorCatcher";
@@ -25,12 +27,17 @@ export default function RootLayout({
         style={{ backgroundColor: "#020617", color: "#f8fafc" }}
       >
         <PromptLogger />
-        <ErrorCatcher />`n        <ReferralTracker />
+        <ErrorCatcher />
+        <ReferralTracker />
         <AffiliateWidget />
         <SessionTracker />
         <Sidebar />
-        <div className="flex-1 overflow-y-auto">{children}</div>
+        <div className="flex-1 overflow-y-auto">{children}
+        <Footer />
+        </div>
             <Orchestrator />
+          
+    <AskBox />
     </body>
     </html>
   );

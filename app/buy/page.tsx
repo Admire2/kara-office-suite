@@ -37,11 +37,11 @@ const PACKS = [
 export default function Buy() {
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   
-  const checkout = async (priceId: string) => {
+  const checkout = async (priceId: string, pack?: string, credits?: number) => { let email = ""; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i) || ""; if (k.indexOf("sb-") === 0 && k.indexOf("-auth-token") > 0) { const jj = JSON.parse(localStorage.getItem(k) || "null"); email = (jj && jj.user && jj.user.email) || ""; if (email) break; } } } catch (e) {}
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ priceId })
+      body: JSON.stringify({ priceId: priceId, email: email, pack: pack || "", credits: credits || 0 })
     });
     const { url } = await res.json();
     if (url) window.location.href = url;
@@ -112,7 +112,7 @@ export default function Buy() {
                 <h3 className="font-bold mb-2">{pack.name}</h3>
                 <p className="text-3xl font-bold mb-2">${pack.price}</p>
                 <p className="text-sm text-slate-400 mb-4">{pack.credits} credits</p>
-                <button onClick={() => checkout(pack.id)} className="w-full bg-amber-500 text-slate-950 py-2 rounded-lg font-bold hover:bg-amber-400">Buy Pack</button>
+                <button onClick={() => checkout(pack.id, pack.name, pack.credits)} className="w-full bg-amber-500 text-slate-950 py-2 rounded-lg font-bold hover:bg-amber-400">Buy Pack</button>
               </div>
             ))}
           </div>

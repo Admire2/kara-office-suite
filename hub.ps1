@@ -1,32 +1,19 @@
-$Host.UI.RawUI.WindowTitle = "FounderPilot Command Center"
-Clear-Host
+﻿# HUB - Quick navigation to all suite lobbies
 Write-Host "=========================================" -ForegroundColor Cyan
-Write-Host "   FOUNDERPILOT ECOSYSTEM COMMAND HUB    " -ForegroundColor Cyan
+Write-Host "  SUITE HUB" -ForegroundColor Cyan
 Write-Host "=========================================" -ForegroundColor Cyan
-Write-Host "Scanning for active management modules...`n" -ForegroundColor Yellow
-
-# Auto-discover all admin tools in the current directory
-$tools = Get-ChildItem -Path $PWD -Filter "*admin.ps1" | Sort-Object Name
-
-$menuItems = @()
-$i = 1
-foreach ($tool in $tools) {
-    $name = $tool.BaseName -replace "admin", ""
-    $name = $name.Substring(0,1).ToUpper() + $name.Substring(1)
-    Write-Host "[$i] $name Module" -ForegroundColor Green
-    $menuItems += $tool.FullName
-    $i++
-}
-Write-Host "[0] Exit Hub" -ForegroundColor DarkGray
-
-$choice = Read-Host "`nLaunch Module"
-if ($choice -eq "0") { exit }
-
-$index = [int]$choice - 1
-if ($index -ge 0 -and $index -lt $menuItems.Count) {
-    Clear-Host
-    Write-Host "Launching $($menuItems[$index])..." -ForegroundColor Cyan
-    & powershell -ExecutionPolicy Bypass -File $menuItems[$index]
-} else {
-    Write-Host "Invalid selection." -ForegroundColor Red
-}
+Write-Host "Responsible for: Opening suite lobby pages in your browser for quick inspection." -ForegroundColor Yellow
+Write-Host ""
+Write-Host "[1] Business Suite (/suite/business)" -ForegroundColor Green
+Write-Host "[2] Office Suite (/suite/office)" -ForegroundColor Green
+Write-Host "[3] Engineering Suite (/suite/engineering)" -ForegroundColor Green
+Write-Host "[4] Healthcare Suite (/suite/healthcare)" -ForegroundColor Green
+Write-Host "[5] Marketplace Suite (/suite/marketplace)" -ForegroundColor Green
+Write-Host "[0] Exit" -ForegroundColor Gray
+$choice = Read-Host "Choose"
+$base = "https://founderpilot-theta.vercel.app"
+if ($choice -eq "1") { Start-Process "$base/suite/business" }
+if ($choice -eq "2") { Start-Process "$base/suite/office" }
+if ($choice -eq "3") { Start-Process "$base/suite/engineering" }
+if ($choice -eq "4") { Start-Process "$base/suite/healthcare" }
+if ($choice -eq "5") { Start-Process "$base/suite/marketplace" }

@@ -1,4 +1,5 @@
 "use client";
+import WalletBar from "@/app/components/WalletBar";
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
@@ -44,6 +45,8 @@ export default function SourcingPage() {
   };
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8">
+      <WalletBar />
+
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold">🔍 Sourcing Search</h1>
         <p className="mt-2 text-sm text-slate-400">Type any objective (e.g. "Build me an AC generator"). We find suppliers / assemblers / manufacturers worldwide, add them to the partner network, and tag every visit with ref=founderpilot so they know the lead is ours.</p>

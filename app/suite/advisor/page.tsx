@@ -1,4 +1,5 @@
 "use client";
+import WalletBar from "@/app/components/WalletBar";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -9,7 +10,9 @@ export default function AdvisorPage() {
 
   useEffect(() => { fetch("/api/advisor").then((r) => r.json()).then(setData); }, []);
 
-  if (!data) return <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center"><p>Cleo is reading your company data...</p></main>;
+  if (!data) return <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+      <WalletBar />
+<p>Cleo is reading your company data...</p></main>;
 
   const m = data.metrics;
   const stats = [

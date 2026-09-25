@@ -1,4 +1,5 @@
 "use client";
+import WalletBar from "@/app/components/WalletBar";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -21,6 +22,8 @@ export default function PasswordGeneratorPage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8">
+      <WalletBar />
+
       <div className="max-w-2xl mx-auto">
         <Link href="/suite" className="text-cyan-400 hover:underline mb-6 inline-block">&larr; Back to Suite</Link>
         <h1 className="text-3xl font-bold mb-2">Secure Password Generator</h1>

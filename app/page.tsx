@@ -101,10 +101,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-white/10 py-12 text-center text-sm text-slate-500">
-        <p>(c) 2026 FounderPilot AI. Built for solo founders, co-founders, and teams - by AI.</p>
-      </footer>
-          <a href="/suite" id="floating-suite-btn" className="fixed bottom-5 right-5 z-50 rounded-full bg-cyan-500 px-5 py-3 font-bold text-slate-950 shadow-2xl hover:bg-cyan-400 transition">⭐ Business Suite</a>
+      
+          <a href="/suite/business" id="floating-suite-btn" className="fixed bottom-5 right-5 z-50 rounded-full bg-cyan-500 px-5 py-3 font-bold text-slate-950 shadow-2xl hover:bg-cyan-400 transition">⭐ Business Suite</a>
     </main>
   );
 }
