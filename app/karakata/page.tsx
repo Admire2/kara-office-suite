@@ -68,7 +68,7 @@ export default function Market() {
   }, []);
 
   const priceOf = (l: any) => Number(l.price_usd != null ? l.price_usd : l.price) || 0;
-  const norm = (s: any) => String(s || "").toLowerCase();
+  const imgFor = (l: any) => l.image_url ? l.image_url : ("https://loremflickr.com/800/600/" + encodeURIComponent(String(l.title || "product").toLowerCase().split(" ").slice(0, 3).join(",")) + "?lock=" + String(l.id)); const norm = (s: any) => String(s || "").toLowerCase();
   const filtered = items.filter((l: any) =>
     (!cat || l.category === cat) &&
     (!sub || l.subcategory === sub) &&
@@ -143,7 +143,7 @@ export default function Market() {
                 const pct = Math.round((1 - p / Number(l.compare_at_usd)) * 100);
                 return (
                   <div key={l.id} className="w-56 shrink-0 rounded-lg border border-slate-200 p-3 shadow-sm">
-                    {l.image_url ? (<img src={l.image_url} alt="" className="h-32 w-full rounded object-cover" />) : (<div className="flex h-32 items-center justify-center rounded bg-slate-100 text-3xl">📦</div>)}
+                    <img src={imgFor(l)} alt="" className="h-32 w-full rounded object-cover" />
                     <p className="mt-2 text-xs font-bold text-red-600">{pct}% off <span className="rounded bg-red-600 px-1 py-0.5 text-[10px] text-white">Limited time deal</span></p>
                     <p className="mt-1 text-lg font-bold">${p.toFixed(2)}</p>
                     <p className="text-xs text-slate-500">Typical: <span className="line-through">${Number(l.compare_at_usd).toFixed(2)}</span></p>
@@ -166,7 +166,7 @@ export default function Market() {
           <div className="mt-3 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {filtered.map((l: any) => (
               <div key={l.id} className="rounded-lg border border-slate-200 p-3 shadow-sm hover:shadow-md">
-                {l.image_url ? (<img src={l.image_url} alt="" className="h-40 w-full rounded object-cover" />) : (<div className="flex h-40 items-center justify-center rounded bg-slate-100 text-4xl">📦</div>)}
+                <img src={imgFor(l)} alt="" className="h-40 w-full rounded object-cover" />
                 <p className="mt-2 text-lg font-bold">${priceOf(l).toFixed(2)}</p>
                 <p className="mt-1 line-clamp-2 text-sm">{l.title}</p>
                 <p className="mt-1 text-xs text-slate-500">{l.category || "Uncategorized"}{l.subcategory ? " · " + l.subcategory : ""}</p>
