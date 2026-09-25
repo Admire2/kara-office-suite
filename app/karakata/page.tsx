@@ -68,7 +68,7 @@ export default function Market() {
   }, []);
 
   const priceOf = (l: any) => Number(l.price_usd != null ? l.price_usd : l.price) || 0;
-  const imgFor = (l: any) => l.image_url ? l.image_url : ("https://loremflickr.com/800/600/" + encodeURIComponent(String(l.title || "product").toLowerCase().split(" ").slice(0, 3).join(",")) + "?lock=" + String(l.id)); const norm = (s: any) => String(s || "").toLowerCase();
+  const imgFor = (l: any) => l.image_url ? l.image_url : ("https://image.pollinations.ai/prompt/" + encodeURIComponent("professional product photo of " + String(l.title || "product")) + "?width=800&height=600&seed=" + String(l.id) + "&nologo=true"); const norm = (s: any) => String(s || "").toLowerCase();
   const filtered = items.filter((l: any) =>
     (!cat || l.category === cat) &&
     (!sub || l.subcategory === sub) &&
