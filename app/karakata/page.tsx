@@ -15,7 +15,7 @@ const TAXONOMY: any[] = [
   { name: "Books & Media", icon: "📚", subs: ["Fiction", "Non-fiction", "Audiobooks"] },
   { name: "Toys & Games", icon: "🧸", subs: ["Kids", "Board games", "Puzzles"] },
   { name: "Sports & Outdoors", icon: "⚽", subs: ["Fitness", "Camping", "Team sports"] },
-  { name: "Automotive", icon: "🚗", subs: ["Accessories", "Parts", "Tools"] },
+  { name: "Automotive", icon: "🚗", subs: ["Cars for sale - New", "Cars for sale - Fairly used", "Sell your car (Instant offer)", "VIN Check", "Pre-purchase inspection", "Certification", "Auto financing", "Accessories", "Parts", "Tools"] }, { name: "Power & Heavy Machinery", icon: "🚜", subs: ["Generators", "Tractors", "Excavators", "Forklifts", "Cranes", "Industrial tools"] },
   { name: "Health & Wellness", icon: "🌿", subs: ["Supplements", "Fitness", "Self-care"] },
   { name: "Services", icon: "🛠️", subs: ["Tailoring", "Repairs", "Custom orders", "Vehicle inspection"] },
 ];
