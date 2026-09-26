@@ -17,10 +17,10 @@ export async function POST(req: Request) {
     const { data: existing } = await supabase.from("referrals").select("id").eq("referred_email", email).limit(1);
     if (existing && existing.length > 0) return NextResponse.json({ ok: true, already: true });
 
-    const { error } = await supabase.from("referrals").insert({
+    const track = code.startsWith("KK-") ? "market" : "suite"; const { error } = await supabase.from("referrals").insert({
       affiliate_code: code,
       referred_email: email,
-      status: "signed_up",
+      status: "signed_up", track: track,
       timestamp_et: etNow
     });
     if (error) return NextResponse.json({ ok: false, error: error.message });

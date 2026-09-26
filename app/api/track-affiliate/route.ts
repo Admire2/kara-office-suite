@@ -7,10 +7,10 @@ export async function POST(req: Request) {
     const b = await req.json();
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
     
-    await supabase.from("affiliate_clicks").insert({
+    const track = b.track || "suite"; await supabase.from("affiliate_clicks").insert({
       user_email: b.email || "anonymous",
       partner_name: b.partner,
-      suite: b.suite,
+      suite: b.suite, track: track,
       project_context: b.context || "unknown"
     });
     
