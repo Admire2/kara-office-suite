@@ -6,12 +6,19 @@ export async function POST(req: Request) {
   try {
     const b: any = await req.json();
     
-    const { year, make, model, vin, price_usd, seller_id, condition } = b;
+    const year = b.year;
+    const make = String(b.make || "");
+    const model = String(b.model || "");
+    const vin = String(b.vin || "");
+    const price = Number(b.price_usd) || 0;
+    const condition = String(b.condition || "fairly_used");
+    const sellerId = Number(b.seller_id) || 1;
     
     if (!year || !make || !model || !vin) {
       return NextResponse.json({ 
         ok: false, 
-        error: "year, make, model, vin are required" 
+        error: "year, make, model, vin are required",
+        received: { year, make, model, vin, price, condition }
       }, { status: 400 });
     }
 
@@ -20,38 +27,39 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Generate title-matched image using Pollinations
+    // Generate title-matched image
     const title = `${year} ${make} ${model}`;
-    const imagePrompt = encodeURIComponent(`professional car photo of ${year} ${make} ${model}, clean studio lighting, white background`);
+    const imagePrompt = encodeURIComponent(`professional car photo of ${year} ${make} ${model}, clean studio lighting`);
     const imageUrl = `https://image.pollinations.ai/prompt/${imagePrompt}?width=800&height=600&seed=${vin.replace(/\W/g, '')}&nologo=true`;
 
-    // Calculate compare_at_usd (15% markup for "typical" price)
-    const compareAt = Math.round(Number(price_usd) * 1.15);
+    const compareAt = Math.round(price * 1.15);
+    const subcategory = condition === "new" ? "Cars for sale - New" : "Cars for sale - Fairly used";
+    const description = `VIN: ${vin}. Well-maintained, clean title, ready for immediate sale.`;
 
-    // Insert into kara_listings
+    console.log("Inserting listing:", { title, price, compareAt, subcategory });
+
     const { data, error } = await sb.from("kara_listings").insert({
       title: title,
-      description: `VIN: ${vin}. ${condition || 'Well-maintained'}, clean title, ready for immediate sale.`,
+      description: description,
       category: "Automotive",
-      subcategory: condition === "new" ? "Cars for sale - New" : "Cars for sale - Fairly used",
+      subcategory: subcategory,
       status: "active",
-      price_usd: Number(price_usd) || 0,
+      price_usd: price,
       compare_at_usd: compareAt,
       image_url: imageUrl,
-      seller_id: Number(seller_id) || 1,
-      metadata: {
-        vin: vin,
-        year: Number(year),
-        make: make,
-        model: model,
-        condition: condition || "fairly_used",
-        entry_method: "manual"
-      }
+      seller_id: sellerId
     }).select().single();
 
     if (error) {
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+      console.error("Insert error:", error);
+      return NextResponse.json({ 
+        ok: false, 
+        error: "Database insert failed: " + error.message,
+        details: error
+      }, { status: 500 });
     }
+
+    console.log("Success:", data);
 
     return NextResponse.json({
       ok: true,
@@ -61,6 +69,11 @@ export async function POST(req: Request) {
     });
 
   } catch (e: any) {
-    return NextResponse.json({ ok: false, error: String(e.message) }, { status: 500 });
+    console.error("Route error:", e);
+    return NextResponse.json({ 
+      ok: false, 
+      error: String(e.message),
+      stack: e.stack
+    }, { status: 500 });
   }
 }
