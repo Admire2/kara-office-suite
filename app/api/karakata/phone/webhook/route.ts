@@ -22,7 +22,11 @@ export async function POST(req: Request) {
   }
 
   if (event === "transcript" || event === "message" || event === "user_message") {
-    const { data: call } = await sb.from("kara_calls").select("*").eq("provider_call_id", callId).order("id", { ascending: false }).limit(1).single().catch(() => ({ data: null }));
+        let call: any = null;
+    try {
+      const res = await sb.from("kara_calls").select("*").eq("provider_call_id", callId).order("id", { ascending: false }).limit(1).single();
+      call = res.data;
+    } catch {}
     const mode = (call && call.campaign === "webinar_followup") ? "outbound_followup" : "inbound";
     const brainRes = await fetch(new URL("/api/karakata/phone/brain", req.url), {
       method: "POST",

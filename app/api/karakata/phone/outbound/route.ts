@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const assistantId = process.env.VAPI_ASSISTANT_ID;
 
     for (const t of targets) {
-      const callRow = { direction: "outbound", phone_number: String(t.phone || ""), campaign: campaign, status: "queued", context: t.context || {} };
+      const callRow: any = { direction: "outbound", phone_number: String(t.phone || ""), campaign: campaign, status: "queued", context: t.context || {} };
 
       if (vapiKey && phoneId && assistantId) {
         try {
