@@ -5,7 +5,11 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const b: any = await req.json().catch(() => ({}));
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-  const event = String(b.type || b.event || "unknown");
+  const raw = String(b.message || b.type || b.event || "unknown");
+    let event = raw;
+    if (raw === "status_update") event = String(b.status || "") === "started" ? "call_started" : (String(b.status || "") === "ended" ? "call_ended" : raw);
+    if (raw === "end-of-call-report") event = "call_ended";
+    if (raw === "transcript" && String(b.type || "") === "partial") event = "ignore_partial";
   const callId = String(b.callId || b.id || "");
   const phone = String(b.phoneNumber || b.customerNumber || b.to || "");
 
