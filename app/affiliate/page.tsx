@@ -1,104 +1,89 @@
+"use client";
+import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { NextResponse } from "next/server";
-export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
-  try {
-    const { order_id } = await req.json();
-    if (!order_id) return NextResponse.json({ ok: false, error: "order_id required" }, { status: 400 });
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-    const sb = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+export default function AffiliateDashboard() {
+  const [tab, setTab] = useState("suite");
+  const [user, setUser] = useState<any>(null);
+  const [origin, setOrigin] = useState("");
+  const [aff, setAff] = useState<any>(null);
+  const [refs, setRefs] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [myRank, setMyRank] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    // 1. Fetch the order
-    const { data: order, error: orderErr } = await sb
-      .from("kara_orders")
-      .select("*")
-      .eq("id", order_id)
-      .single();
+  useEffect(() => {
+    setOrigin(window.location.origin);
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        await loadAll(session.user.email || "");
+        await loadLeaderboard();
+      }
+      setLoading(false);
+    })();
+  }, []);
 
-    if (orderErr || !order) {
-      return NextResponse.json({ ok: false, error: "Order not found" }, { status: 404 });
+  const loadAll = async (email: string) => {
+    const { data } = await supabase.from("affiliates").select("*").eq("email", email).limit(1);
+    if (data && data.length > 0) {
+      setAff(data[0]);
+      const { data: r } = await supabase.from("referrals").select("*").eq("affiliate_code", data[0].affiliate_code).order("created_at", { ascending: false });
+      setRefs(r || []);
     }
+  };
 
-    // 2. Check if this order already has a commission
-    const { data: existing } = await sb
-      .from("referrals")
-      .select("id")
-      .eq("order_id", order_id)
-      .eq("track", "market")
-      .limit(1);
-
-    if (existing && existing.length > 0) {
-      return NextResponse.json({ ok: true, already: true, message: "Commission already calculated" });
+  const loadLeaderboard = async () => {
+    const { data } = await supabase.from("affiliates").select("affiliate_code, first_name, last_name, total_earned").order("total_earned", { ascending: false }).limit(10);
+    if (data) {
+      const ranked = data.map((a: any, i: number) => ({ ...a, rank: i + 1 }));
+      setLeaderboard(ranked);
     }
+  };
 
-    // 3. Check if buyer was referred (cookie tracking)
-    const buyerEmail = order.buyer_email || order.email;
-    if (!buyerEmail) {
-      return NextResponse.json({ ok: false, error: "No buyer email on order" }, { status: 400 });
-    }
+  if (loading) return <main className="min-h-screen bg-slate-950 p-8 text-white">Loading...</main>;
 
-    // Look for referral record for this buyer
-    const { data: referral } = await sb
-      .from("referrals")
-      .select("*")
-      .eq("referred_email", buyerEmail)
-      .eq("track", "suite")
-      .order("id", { ascending: false })
-      .limit(1);
+  return (
+    <main className="min-h-screen bg-slate-950 p-8 text-white">
+      <div className="mx-auto max-w-5xl">
+        <h1 className="text-4xl font-bold text-emerald-400">💰 Affiliate Dashboard</h1>
+        
+        <div className="mt-8 flex gap-2 border-b border-slate-700">
+          <button onClick={() => setTab("suite")} className={"px-6 py-3 font-bold " + (tab === "suite" ? "border-b-2 border-emerald-400 text-emerald-400" : "text-slate-400")}>Suite</button>
+          <button onClick={() => setTab("market")} className={"px-6 py-3 font-bold " + (tab === "market" ? "border-b-2 border-emerald-400 text-emerald-400" : "text-slate-400")}>Market (3%)</button>
+          <button onClick={() => setTab("funding")} className={"px-6 py-3 font-bold " + (tab === "funding" ? "border-b-2 border-emerald-400 text-emerald-400" : "text-slate-400")}>🏦 Funded Sellers</button>
+        </div>
 
-    if (!referral || referral.length === 0) {
-      return NextResponse.json({ ok: true, no_referral: true, message: "Buyer not referred" });
-    }
+        {tab === "market" && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-emerald-400">🏆 Springboard Leaderboard</h2>
+            <div className="mt-4 space-y-2">
+              {leaderboard.map((a, i) => (
+                <div key={a.affiliate_code} className="rounded-lg border border-slate-700 bg-slate-900 p-4">
+                  <div className="flex justify-between">
+                    <span className="text-2xl font-bold">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${a.rank}`}</span>
+                    <span className="font-bold text-white">{a.first_name} {a.last_name}</span>
+                    <span className="text-emerald-400">${Number(a.total_earned || 0).toFixed(2)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-    const affiliateCode = referral[0].affiliate_code;
-
-    // 4. Calculate commission (3% of order value)
-    const orderValue = Number(order.total_usd || order.total || 0);
-    const commissionRate = 0.03;
-    const commissionAmount = orderValue * commissionRate;
-
-    // 5. Insert market-track referral record
-    const { error: insertErr } = await sb.from("referrals").insert({
-      affiliate_code: affiliateCode,
-      referred_email: buyerEmail,
-      order_id: order_id,
-      order_value: orderValue,
-      commission_amount: commissionAmount,
-      status: "pending",
-      track: "market",
-      timestamp_et: new Date().toLocaleString("en-US", { timeZone: "America/New_York", hour12: false })
-    });
-
-    if (insertErr) {
-      return NextResponse.json({ ok: false, error: insertErr.message }, { status: 500 });
-    }
-
-    // 6. Update affiliate's total_earned
-    const { error: updateErr } = await sb
-      .from("affiliates")
-      .update({ total_earned: commissionAmount })
-      .eq("affiliate_code", affiliateCode);
-
-    if (updateErr) {
-      return NextResponse.json({ ok: false, error: "Failed to update affiliate balance" }, { status: 500 });
-    }
-
-    // 7. Update leaderboard cache
-    await sb.rpc("update_affiliate_leaderboard", { p_code: affiliateCode });
-
-    return NextResponse.json({
-      ok: true,
-      affiliate_code: affiliateCode,
-      order_value: orderValue,
-      commission_rate: commissionRate,
-      commission_amount: commissionAmount,
-      status: "pending (14-day hold)"
-    });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
-  }
+        {tab === "funding" && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-emerald-400">🏦 Sellers Who Got Funded</h2>
+            <p className="mt-2 text-slate-400">Coming soon: track which sellers you recruited qualified for expansion capital.</p>
+          </div>
+        )}
+      </div>
+    </main>
+  );
 }
