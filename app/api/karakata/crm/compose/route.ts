@@ -6,9 +6,12 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const tenantId = String(url.searchParams.get("tenant_id") || "karakata");
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-  const { data: tenant } = await sb.from("kara_tenants").select("*").eq("id", tenantId).single().catch(() => ({ data: null }));
+  
+  const { data: tenant } = await sb.from("kara_tenants").select("*").eq("id", tenantId).single();
   const industryId = String((tenant && tenant.industry_id) || "real_estate");
-  const { data: industry } = await sb.from("kara_industries").select("*").eq("id", industryId).single().catch(() => ({ data: null }));
+  
+  const { data: industry } = await sb.from("kara_industries").select("*").eq("id", industryId).single();
+  
   const company = (tenant && tenant.name) || "KaraKata";
   const fields: any[] = ((industry && industry.form_schema) || []);
   const prompt = [

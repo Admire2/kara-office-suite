@@ -12,9 +12,21 @@ export async function POST(req: Request) {
     if (!transcript) return NextResponse.json({ ok: false, error: "transcript required" }, { status: 400 });
 
     const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-    const { data: tenant } = await sb.from("kara_tenants").select("*").eq("id", tenantId).single().catch(() => ({ data: null }));
+    
+    let tenant: any = null;
+    try {
+      const res = await sb.from("kara_tenants").select("*").eq("id", tenantId).single();
+      tenant = res.data;
+    } catch {}
+
     const industryId = String(b.industry_id || (tenant && tenant.industry_id) || "real_estate");
-    const { data: industry } = await sb.from("kara_industries").select("*").eq("id", industryId).single().catch(() => ({ data: null }));
+    
+    let industry: any = null;
+    try {
+      const res = await sb.from("kara_industries").select("*").eq("id", industryId).single();
+      industry = res.data;
+    } catch {}
+
     const schema: any[] = (industry && industry.form_schema) || [];
 
     const prompt = "You are a CRM data-entry engine. From this phone call transcript between an AI agent and a caller, extract structured intake data.\nFields to extract (JSON keys with labels): " + JSON.stringify(schema) + "\nRules: null when unknown; numbers as plain numbers without currency symbols; also return contact {name, phone, email} if mentioned, a 2-sentence summary, and status = one of intake|qualified|followup|closed.\nReturn ONLY JSON: {\"fields\":{...},\"contact\":{...},\"summary\":\"...\",\"status\":\"...\"}\nTranscript:\n" + transcript;
@@ -23,6 +35,7 @@ export async function POST(req: Request) {
     const tries: any[] = [];
     if (process.env.QWEN_API_KEY && process.env.QWEN_API_URL) tries.push({ url: process.env.QWEN_API_URL, key: process.env.QWEN_API_KEY, model: process.env.QWEN_MODEL || "qwen-plus" });
     if (process.env.DEEPSEEK_API_KEY) tries.push({ url: "https://api.deepseek.com/chat/completions", key: process.env.DEEPSEEK_API_KEY, model: "deepseek-chat" });
+    
     for (const t of tries) {
       try {
         const r = await fetch(t.url, { method: "POST", headers: { Authorization: "Bearer " + t.key, "Content-Type": "application/json" }, body: JSON.stringify({ model: t.model, temperature: 0.1, messages: [{ role: "user", content: prompt }] }) });
@@ -44,7 +57,8 @@ export async function POST(req: Request) {
     if (!contact) {
       const { count } = await sb.from("kara_crm_contacts").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId);
       const code = tenantId.slice(0, 3).toUpperCase() + "-" + String((count || 0) + 1).padStart(4, "0");
-      const { data: created } = await sb.from("kara_crm_contacts").insert({ contact_code: code, tenant_id: tenantId, industry_id: industryId, name: (parsed.contact && parsed.contact.name) || null, phone: phone || null, email: (parsed.contact && parsed.contact.email) || null }).select().single();
+      const { data: created, error: createError } = await sb.from("kara_crm_contacts").insert({ contact_code: code, tenant_id: tenantId, industry_id: industryId, name: (parsed.contact && parsed.contact.name) || null, phone: phone || null, email: (parsed.contact && parsed.contact.email) || null }).select().single();
+      if (createError) return NextResponse.json({ ok: false, error: createError.message }, { status: 500 });
       contact = created;
     }
     if (!contact) return NextResponse.json({ ok: false, error: "contact creation failed" }, { status: 500 });
