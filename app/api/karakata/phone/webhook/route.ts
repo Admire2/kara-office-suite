@@ -37,7 +37,14 @@ export async function POST(req: Request) {
         action_taken: (bj && bj.action) || call.action_taken
       }).eq("id", call.id);
     }
-    return NextResponse.json({ ok: true, reply: (bj && bj.reply) || "", action: (bj && bj.action) || null });
+    const act = (bj && bj.action && bj.action.action) || "";
+    if (act === "close_and_handoff" && call) {
+      await fetch(new URL("/api/karakata/phone/handoff", req.url), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ call_id: call.id, handoff_type: "post_call", priority: "normal" }) });
+    }
+    if (act === "warm_transfer" && call) {
+      await fetch(new URL("/api/karakata/phone/handoff", req.url), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ call_id: call.id, handoff_type: "warm_transfer", priority: "urgent" }) });
+    }
+    return NextResponse.json({ ok: true, reply: (bj && bj.reply) || "", action: (bj && bj.action) || null, transfer: act === "warm_transfer" });
   }
 
   if (event === "call_ended" || event === "end" || event === "conversation.end") {
