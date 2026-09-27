@@ -5,6 +5,9 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const b: any = await req.json().catch(() => ({}));
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    // Tenant lookup: which client owns this phone number?
+    const { data: tenantMap } = await sb.from("kara_phone_tenants").select("tenant_id").eq("phone_number", phone).single().catch(() => ({ data: null }));
+    const tenantId = (tenantMap && tenantMap.tenant_id) || "karakata";
   const raw = String(b.message || b.type || b.event || "unknown");
     let event = raw;
     if (raw === "status_update") event = String(b.status || "") === "started" ? "call_started" : (String(b.status || "") === "ended" ? "call_ended" : raw);
@@ -14,7 +17,7 @@ export async function POST(req: Request) {
   const phone = String(b.phoneNumber || b.customerNumber || b.to || "");
 
   if (event === "call_started" || event === "start" || event === "conversation.start") {
-    await sb.from("kara_calls").insert({
+    await sb.from("kara_calls").insert({ tenant_id: tenantId,
       direction: String(b.direction || "inbound"),
       phone_number: phone,
       provider_call_id: callId,
@@ -58,7 +61,7 @@ export async function POST(req: Request) {
       const leadId = (existingLead && existingLead[0] && existingLead[0].id) || null;
       if (!leadId && call.direction === "outbound") {
         // Auto-create lead from outbound call target
-        const { data: newLead } = await sb.from("kara_leads").insert({ name: "", email: null, phone: call.phone_number, source: "outbound_call", stage: "contacted", owner: "ai" }).select().single();
+        const { data: newLead } = await sb.from("kara_leads").insert({ tenant_id: tenantId, name: "", email: null, phone: call.phone_number, source: "outbound_call", stage: "contacted", owner: "ai" }).select().single();
         if (newLead) await fetch(new URL("/api/karakata/leads/next-action", req.url), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lead_id: newLead.id, channel: "call", direction: "outbound", outcome: String((bj && bj.action && bj.action.action) || "completed"), content: String(call.transcript || "").slice(0, 500) }) });
       } else if (leadId) {
         await fetch(new URL("/api/karakata/leads/next-action", req.url), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lead_id: leadId, channel: "call", direction: call.direction, outcome: String((bj && bj.action && bj.action.action) || "completed"), content: String(call.transcript || "").slice(0, 500) }) });
