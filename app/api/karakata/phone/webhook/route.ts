@@ -72,6 +72,12 @@ export async function POST(req: Request) {
 
   if (event === "call_ended" || event === "end" || event === "conversation.end") {
     await sb.from("kara_calls").update({ status: "completed" }).eq("provider_call_id", callId);
+    try {
+      const { data: doneCall } = await sb.from("kara_calls").select("*").eq("provider_call_id", callId).order("id", { ascending: false }).limit(1).single();
+      if (doneCall && doneCall.transcript) {
+        await fetch(new URL("/api/karakata/crm/extract", req.url), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tenant_id: doneCall.tenant_id || "karakata", call_id: callId, transcript: doneCall.transcript, caller_phone: doneCall.phone_number }) });
+      }
+    } catch {}
     return NextResponse.json({ ok: true });
   }
 
