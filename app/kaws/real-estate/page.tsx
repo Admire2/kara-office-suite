@@ -16,7 +16,9 @@ const tools = [
   { name: "Kara Valuate", icon: "🎁", status: "LIVE SOON", desc: "Free public tool: any homeowner types an address, gets an instant AI estimate - and becomes a qualified seller lead in your CRM.", beats: "The free-valuation lead magnet Zillow guards jealously" },
   { name: "Kara Autopilot", icon: "🛰️", status: "LIVE", desc: "Your AI COO: nightly autonomous workflows - pull lists, skip-trace, launch call campaigns, compile briefings, nudge humans.", beats: "The autonomous-workflow layer rivals charge extra for" },
   { name: "Kara Coordinator", icon: "📋", status: "LIVE", desc: "Generate professional closing timelines and task lists instantly. Never miss a deadline.", beats: "Replaces ListedKit ($49/transaction)" },
-  { name: "Kara Contract Review", icon: "⚖️", status: "LIVE", desc: "Paste contract text to instantly flag missing clauses and risky terms.", beats: "Replaces Spellbook (Enterprise)" }
+  { name: "Kara Contract Review", icon: "⚖️", status: "LIVE", desc: "Paste contract text to instantly flag missing clauses and risky terms.", beats: "Replaces Spellbook (Enterprise)" },
+  { name: "Kara MCP Server", icon: "🔌", status: "LIVE", desc: "Model Context Protocol: Exposes Kara tools to Claude Desktop, Cursor, and custom AI agents.", beats: "The open-standard AI connector" },
+  { name: "Kara Mobile DFD", icon: "📱", status: "LIVE", desc: "Driving for Dollars: Snap photos of distressed properties, auto-add to Scout, and skip-trace owners instantly.", beats: "Replaces DealMachine app" }
 ];
 
 export default function RealEstateSuitePage() {
@@ -25,7 +27,7 @@ export default function RealEstateSuitePage() {
       <header className="max-w-6xl mx-auto px-6 py-14">
         <div className="text-sm font-bold tracking-widest text-indigo-400 uppercase mb-3">KAWS Member 02</div>
         <h1 className="text-4xl font-bold mb-4">KAWS Real Estate Suite</h1>
-        <p className="text-lg text-slate-400 max-w-3xl">Sixteen AI agents that cover the whole deal cycle: find it, rank it, map it, analyze it, call the owner, negotiate, watch the auction, and never drop the follow-up.</p>
+        <p className="text-lg text-slate-400 max-w-3xl">Eighteen AI agents that cover the whole deal cycle: find it, rank it, map it, analyze it, call the owner, negotiate, watch the auction, and never drop the follow-up.</p>
       </header>
 
       <section className="max-w-6xl mx-auto px-6 pb-8 grid md:grid-cols-2 gap-5">
