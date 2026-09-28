@@ -4,17 +4,36 @@ import Link from "next/link";
 
 export default function MobileNav({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [sidebarView, setSidebarView] = useState<"main" | "kaws">("main");
 
-  const menuItems = [
+  const mainMenuItems = [
     { href: "/", label: "Home", icon: "🏠" },
-    { href: "/kaws", label: "KAWS Hub", icon: "🌐" },
+    { href: "/karakata", label: "Marketplace", icon: "🛒" },
+    { href: "/kaws", label: "KAWS Hub", icon: "🌐", action: () => setSidebarView("kaws") },
+    { href: "/suite/ilera", label: "Healthcare Suite", icon: "🩺" },
+    { href: "/suite/ounje", label: "Nutrition Suite", icon: "🍲" },
+    { href: "/karakata/auto", label: "Auto Suite", icon: "🚗" },
+    { href: "/suite/engineering", label: "Engineering Suite", icon: "🛠️" },
+    { href: "/suite/office", label: "Office Suite", icon: "📁" },
+    { href: "/onboard", label: "Launch AI Agent", icon: "🚀" },
+  ];
+
+  const kawsMenuItems = [
     { href: "/kaws/real-estate", label: "Real Estate Suite", icon: "🏘️" },
     { href: "/kaws/mls", label: "MLS Connector", icon: "📡" },
     { href: "/kaws/mobile-dfd", label: "Driving for Dollars", icon: "📱" },
     { href: "/kaws/coordinator", label: "Transaction Coordinator", icon: "📋" },
     { href: "/kaws/contract", label: "Contract Review", icon: "⚖️" },
-    { href: "/onboard", label: "Launch AI Agent", icon: "" },
+    { href: "/onboard", label: "Launch AI Agent", icon: "🚀" },
   ];
+
+  const handleItemClick = (action?: () => void) => {
+    if (action) {
+      action();
+    } else {
+      setIsOpen(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -32,32 +51,58 @@ export default function MobileNav({ children }: { children: React.ReactNode }) {
       {/* Mobile Sidebar */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setIsOpen(false)} />
-          <div className="relative w-72 bg-slate-900 h-full overflow-y-auto border-r border-slate-800 animate-in slide-in-from-left">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setIsOpen(false); setSidebarView("main"); }} />
+          <div className="relative w-72 bg-slate-900 h-full overflow-y-auto border-r border-slate-800 animate-in slide-in-from-left duration-200">
             <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">Menu</h2>
-              <button onClick={() => setIsOpen(false)} className="p-2 text-slate-400 hover:text-white">
+              <h2 className="text-lg font-bold text-white">
+                {sidebarView === "main" ? "Main Menu" : "KAWS Members"}
+              </h2>
+              <button onClick={() => { setIsOpen(false); setSidebarView("main"); }} className="p-2 text-slate-400 hover:text-white">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
+            
             <nav className="p-4 space-y-2">
-              {menuItems.map((item) => (
-                <Link 
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white transition"
-                >
-                  <span className="text-xl">{item.icon}</span>
-                  <span className="font-medium">{item.label}</span>
-                </Link>
-              ))}
+              {sidebarView === "main" ? (
+                mainMenuItems.map((item) => (
+                  <button 
+                    key={item.href}
+                    onClick={() => handleItemClick(item.action)}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white transition text-left"
+                  >
+                    <span className="text-xl">{item.icon}</span>
+                    <span className="font-medium">{item.label}</span>
+                  </button>
+                ))
+              ) : (
+                <>
+                  <button 
+                    onClick={() => setSidebarView("main")}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-indigo-900/30 border border-indigo-700/50 hover:bg-indigo-900/50 text-indigo-300 transition text-left mb-4"
+                  >
+                    <span className="text-xl">⬅️</span>
+                    <span className="font-medium">Back to Main Menu</span>
+                  </button>
+                  {kawsMenuItems.map((item) => (
+                    <Link 
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => { setIsOpen(false); setSidebarView("main"); }}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white transition"
+                    >
+                      <span className="text-xl">{item.icon}</span>
+                      <span className="font-medium">{item.label}</span>
+                    </Link>
+                  ))}
+                </>
+              )}
             </nav>
+            
             <div className="p-4 border-t border-slate-800 mt-auto">
               <div className="text-xs text-slate-500 text-center">
-                KAWS v1.0 • Licensed Agent Track
+                FounderPilot AI Suite v1.0
               </div>
             </div>
           </div>
@@ -75,17 +120,17 @@ export default function MobileNav({ children }: { children: React.ReactNode }) {
           <span className="text-xl">🏠</span>
           <span className="text-[10px]">Home</span>
         </Link>
-        <Link href="/kaws" className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-white transition">
+        <Link href="/karakata" className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-white transition">
+          <span className="text-xl">🛒</span>
+          <span className="text-[10px]">Market</span>
+        </Link>
+        <Link href="/kaws" className="flex flex-col items-center gap-1 p-2 text-emerald-400 hover:text-emerald-300 transition">
           <span className="text-xl">🌐</span>
           <span className="text-[10px]">KAWS</span>
         </Link>
         <Link href="/kaws/real-estate" className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-white transition">
           <span className="text-xl">🏘️</span>
           <span className="text-[10px]">Real Estate</span>
-        </Link>
-        <Link href="/kaws/mobile-dfd" className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-white transition">
-          <span className="text-xl">📱</span>
-          <span className="text-[10px]">Mobile</span>
         </Link>
         <Link href="/onboard" className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-white transition">
           <span className="text-xl">🚀</span>
