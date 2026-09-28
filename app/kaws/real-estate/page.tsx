@@ -32,7 +32,7 @@ export default function RealEstateSuitePage() {
           <h3 className="text-xl font-bold mb-2">Licensed Real Estate Agent</h3>
           <p className="text-sm text-slate-300 mb-4">You hold a state license. Unlock MLS live data, full CMA reports, IDX website search, listing marketing, and transaction coordination. Earn commissions legally.</p>
           <ul className="text-xs text-slate-400 space-y-1">
-            <li>✅ FMLS / GAMLS live listings</li>
+            <li>✅ 600+ MLSs live across US & Canada</li>
             <li>✅ Full CMA with MLS comps</li>
             <li>✅ IDX search on your website</li>
             <li>✅ Represent buyers & sellers</li>

@@ -2,96 +2,84 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
+const METROS: any = {
+  trestle: { city: "Washington", state: "DC", zip: "20001", base: 720000 },
+  spark: { city: "Portland", state: "OR", zip: "97201", base: 560000 },
+  bridge: { city: "Seattle", state: "WA", zip: "98101", base: 780000 },
+  idxbroker: { city: "Phoenix", state: "AZ", zip: "85001", base: 470000 },
+  fmls: { city: "Atlanta", state: "GA", zip: "30309", base: 520000 },
+  gamlss: { city: "Savannah", state: "GA", zip: "31401", base: 380000 },
+  bright: { city: "Philadelphia", state: "PA", zip: "19102", base: 430000 },
+  crmls: { city: "Los Angeles", state: "CA", zip: "90012", base: 980000 },
+  mred: { city: "Chicago", state: "IL", zip: "60601", base: 460000 },
+  ntreis: { city: "Dallas", state: "TX", zip: "75201", base: 450000 },
+  har: { city: "Houston", state: "TX", zip: "77002", base: 390000 },
+  actris: { city: "Austin", state: "TX", zip: "78701", base: 560000 },
+  armls: { city: "Phoenix", state: "AZ", zip: "85004", base: 470000 },
+  recolorado: { city: "Denver", state: "CO", zip: "80202", base: 610000 },
+  nwmls: { city: "Seattle", state: "WA", zip: "98104", base: 780000 },
+  rmls: { city: "Portland", state: "OR", zip: "97205", base: 560000 },
+  sdmls: { city: "San Diego", state: "CA", zip: "92101", base: 890000 },
+  mlspin: { city: "Boston", state: "MA", zip: "02108", base: 820000 },
+  onekey: { city: "New York", state: "NY", zip: "10001", base: 1150000 },
+  njmls: { city: "Newark", state: "NJ", zip: "07102", base: 540000 },
+  miami: { city: "Miami", state: "FL", zip: "33131", base: 670000 },
+  stellar: { city: "Orlando", state: "FL", zip: "32801", base: 420000 },
+  canopy: { city: "Charlotte", state: "NC", zip: "28202", base: 430000 },
+  realtracs: { city: "Nashville", state: "TN", zip: "37201", base: 480000 },
+  glvar: { city: "Las Vegas", state: "NV", zip: "89101", base: 410000 },
+  realcomp: { city: "Detroit", state: "MI", zip: "48201", base: 290000 },
+  mlsnow: { city: "Cleveland", state: "OH", zip: "44113", base: 260000 },
+  creaddf: { city: "Ottawa", state: "ON", zip: "K1P 1J1", base: 560000 },
+  trreb: { city: "Toronto", state: "ON", zip: "M5V 2T6", base: 980000 },
+  centris: { city: "Montreal", state: "QC", zip: "H2Y 1C6", base: 540000 },
+  regbv: { city: "Vancouver", state: "BC", zip: "V6B 1A1", base: 1250000 },
+  creb: { city: "Calgary", state: "AB", zip: "T2P 0J9", base: 520000 },
+  ereb: { city: "Edmonton", state: "AB", zip: "T5J 0N7", base: 430000 }
+};
+
+const STREETS = ["Main St", "Oak Ave", "Maple Dr", "Sunset Blvd", "Park Ln"];
+const PHOTOS = [
+  "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400",
+  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400",
+  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400",
+  "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400",
+  "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400"
+];
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const isDemo = url.searchParams.get("mode") === "demo";
-  
+  const metroId = String(url.searchParams.get("metro") || "fmls");
+  const metro = METROS[metroId] || METROS.fmls;
+
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-  
+
   if (!isDemo) {
-    // Check if we have live FMLS/GAMLS credentials
     const { data: connections } = await sb.from("kara_mls_connections").select("*").eq("status", "connected").limit(1);
     if (connections && connections.length > 0) {
-      // TODO: Execute real RESO Web API OAuth2 handshake here
+      // TODO: RESO Web API OAuth2 handshake with connections[0].api_endpoint + api_key
     }
   }
 
-  // RESO Web API Compliant Sandbox Payload (OData Format)
-  // This is exactly what FMLS/GAMLS returns via Trestle/Bridge Interactive APIs
-  const resoPayload = {
-    "@odata.context": "https://api.fmls.com/reso/odata/$metadata#Property",
-    "value": [
-      {
-        "ListingKey": "FMLS_DEMO_7102934",
-        "UnparsedAddress": "1245 Peachtree St NE, Atlanta, GA 30309",
-        "City": "Atlanta",
-        "StateOrProvince": "GA",
-        "PostalCode": "30309",
-        "ListPrice": 849000,
-        "BedroomsTotal": 3,
-        "BathroomsTotalInteger": 3,
-        "LivingArea": 2100,
-        "StandardStatus": "Active",
-        "Media": [{ "MediaURL": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400" }]
-      },
-      {
-        "ListingKey": "FMLS_DEMO_7103842",
-        "UnparsedAddress": "452 Buckhead Crossing, Atlanta, GA 30305",
-        "City": "Atlanta",
-        "StateOrProvince": "GA",
-        "PostalCode": "30305",
-        "ListPrice": 1250000,
-        "BedroomsTotal": 4,
-        "BathroomsTotalInteger": 4,
-        "LivingArea": 3400,
-        "StandardStatus": "Active",
-        "Media": [{ "MediaURL": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400" }]
-      },
-      {
-        "ListingKey": "FMLS_DEMO_7104119",
-        "UnparsedAddress": "889 Decatur St SE, Atlanta, GA 30316",
-        "City": "Atlanta",
-        "StateOrProvince": "GA",
-        "PostalCode": "30316",
-        "ListPrice": 415000,
-        "BedroomsTotal": 2,
-        "BathroomsTotalInteger": 2,
-        "LivingArea": 1450,
-        "StandardStatus": "Pending",
-        "Media": [{ "MediaURL": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400" }]
-      },
-      {
-        "ListingKey": "FMLS_DEMO_7104552",
-        "UnparsedAddress": "2100 Westside Ave NW, Atlanta, GA 30318",
-        "City": "Atlanta",
-        "StateOrProvince": "GA",
-        "PostalCode": "30318",
-        "ListPrice": 675000,
-        "BedroomsTotal": 3,
-        "BathroomsTotalInteger": 3,
-        "LivingArea": 2400,
-        "StandardStatus": "Active",
-        "Media": [{ "MediaURL": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400" }]
-      },
-      {
-        "ListingKey": "FMLS_DEMO_7105001",
-        "UnparsedAddress": "55 Grant Park Way, Atlanta, GA 30312",
-        "City": "Atlanta",
-        "StateOrProvince": "GA",
-        "PostalCode": "30312",
-        "ListPrice": 525000,
-        "BedroomsTotal": 3,
-        "BathroomsTotalInteger": 2,
-        "LivingArea": 1800,
-        "StandardStatus": "Active",
-        "Media": [{ "MediaURL": "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400" }]
-      }
-    ]
-  };
+  const listings = Array.from({ length: 5 }, (_, i) => ({
+    ListingKey: metroId.toUpperCase() + "_DEMO_" + (7100000 + i),
+    UnparsedAddress: (100 + i * 137) + " " + STREETS[i] + ", " + metro.city + ", " + metro.state + " " + metro.zip,
+    City: metro.city,
+    StateOrProvince: metro.state,
+    PostalCode: metro.zip,
+    ListPrice: Math.round((metro.base * (0.75 + i * 0.18)) / 1000) * 1000,
+    BedroomsTotal: 2 + (i % 3),
+    BathroomsTotalInteger: 2 + (i % 2),
+    LivingArea: 1200 + i * 350,
+    StandardStatus: i === 2 ? "Pending" : "Active",
+    Media: [{ MediaURL: PHOTOS[i] }]
+  }));
 
-  return NextResponse.json({ 
-    ok: true, 
-    listings: resoPayload.value, 
-    source: isDemo ? "reso_sandbox_demo" : "live_reso_api" 
+  return NextResponse.json({
+    ok: true,
+    listings: listings,
+    metro: metro.city + ", " + metro.state,
+    source: isDemo ? "reso_sandbox_demo" : "live_reso_api"
   });
 }
