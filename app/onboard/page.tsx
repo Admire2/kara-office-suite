@@ -26,24 +26,19 @@ export default function OnboardPage() {
         body: JSON.stringify({ company_name: company, email, industry_id: industry })
       });
       const data = await res.json();
-      if (data.ok) {
-        setSuccess("🎉 " + company + " is now live! Your Tenant ID is: " + data.tenant_id + ". Our team will assign your phone number shortly.");
-      } else {
-        setSuccess("Error: " + data.error);
-      }
-    } catch (err: any) {
-      setSuccess("Network error: " + err.message);
-    } finally {
-      setLoading(false);
-    }
+      if (data.ok) setSuccess("🎉 " + company + " is now live! Your Tenant ID is: " + data.tenant_id + ". Our team will assign your phone number shortly.");
+      else setSuccess("Error: " + data.error);
+    } catch (err: any) { setSuccess("Network error: " + err.message); } 
+    finally { setLoading(false); }
   };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100 flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-slate-900/80 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-8 space-y-6">
         <header className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-white">Launch Your AI Receptionist</h1>
-          <p className="text-slate-400 text-sm">Never miss a lead again. 12 industries. 5 languages. Setup in 30 seconds.</p>
+          <div className="text-xs font-bold tracking-widest text-indigo-400 uppercase">KaraKata AI Web Services (KAWS)</div>
+          <h1 className="text-3xl font-bold text-white">Launch Your AI Sales Representative</h1>
+          <p className="text-slate-400 text-sm">Meet Kara. She answers calls, qualifies leads in 5 languages, and ensures you follow up on time.</p>
         </header>
 
         <form onSubmit={handleSignup} className="space-y-4">
@@ -64,14 +59,12 @@ export default function OnboardPage() {
             </select>
           </div>
           <button disabled={loading} type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
-            {loading ? "Provisioning AI Agent..." : "Start $149/mo Trial"}
+            {loading ? "Provisioning AI Sales Rep..." : "Start $149/mo Trial"}
           </button>
         </form>
 
-        {success && (
-          <div className="p-3 bg-emerald-900/50 border border-emerald-700 rounded-lg text-emerald-200 text-sm text-center">{success}</div>
-        )}
-        <p className="text-center text-xs text-slate-500">Powered by FounderPilot AI Suite · Secure & Encrypted</p>
+        {success && <div className="p-3 bg-emerald-900/50 border border-emerald-700 rounded-lg text-emerald-200 text-sm text-center">{success}</div>}
+        <p className="text-center text-xs text-slate-500">Secure & Encrypted · Powered by KAWS</p>
       </div>
     </main>
   );
