@@ -27,12 +27,24 @@ export default function MobileNav({ children }: { children: React.ReactNode }) {
     { href: "/onboard", label: "Launch AI Agent", icon: "🚀" },
   ];
 
-  const handleItemClick = (action?: () => void) => {
-    if (action) {
-      action();
+  const handleMainItemClick = (item: any) => {
+    if (item.action) {
+      item.action();
     } else {
       setIsOpen(false);
+      setSidebarView("main");
     }
+  };
+
+  const handleKawsItemClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsOpen(false);
+    setSidebarView("main");
+  };
+
+  const handleBackdropClick = () => {
+    setIsOpen(false);
+    setSidebarView("main");
   };
 
   return (
@@ -45,19 +57,25 @@ export default function MobileNav({ children }: { children: React.ReactNode }) {
           </svg>
         </button>
         <h1 className="text-lg font-bold text-white">FounderPilot AI</h1>
-        <div className="w-10" /> {/* Spacer */}
+        <div className="w-10" />
       </header>
 
       {/* Mobile Sidebar */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setIsOpen(false); setSidebarView("main"); }} />
-          <div className="relative w-72 bg-slate-900 h-full overflow-y-auto border-r border-slate-800 animate-in slide-in-from-left duration-200">
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+            onClick={handleBackdropClick}
+          />
+          <div 
+            className="relative w-72 bg-slate-900 h-full overflow-y-auto border-r border-slate-800 animate-in slide-in-from-left duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-4 border-b border-slate-800 flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">
                 {sidebarView === "main" ? "Main Menu" : "KAWS Members"}
               </h2>
-              <button onClick={() => { setIsOpen(false); setSidebarView("main"); }} className="p-2 text-slate-400 hover:text-white">
+              <button onClick={handleBackdropClick} className="p-2 text-slate-400 hover:text-white">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -69,7 +87,7 @@ export default function MobileNav({ children }: { children: React.ReactNode }) {
                 mainMenuItems.map((item) => (
                   <button 
                     key={item.href}
-                    onClick={() => handleItemClick(item.action)}
+                    onClick={() => handleMainItemClick(item)}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white transition text-left"
                   >
                     <span className="text-xl">{item.icon}</span>
@@ -89,8 +107,8 @@ export default function MobileNav({ children }: { children: React.ReactNode }) {
                     <Link 
                       key={item.href}
                       href={item.href}
-                      onClick={() => { setIsOpen(false); setSidebarView("main"); }}
-                      className="flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white transition"
+                      onClick={handleKawsItemClick}
+                      className="block w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white transition"
                     >
                       <span className="text-xl">{item.icon}</span>
                       <span className="font-medium">{item.label}</span>
