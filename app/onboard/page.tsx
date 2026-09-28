@@ -5,6 +5,9 @@ export default function OnboardPage() {
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
   const [industry, setIndustry] = useState("real_estate");
+  const [licenseType, setLicenseType] = useState("investor");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [licenseState, setLicenseState] = useState("GA");
   const [industries, setIndustries] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
@@ -23,7 +26,7 @@ export default function OnboardPage() {
       const res = await fetch("/api/karakata/onboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ company_name: company, email, industry_id: industry })
+        body: JSON.stringify({ company_name: company, email, industry_id: industry, license_type: licenseType, license_number: licenseNumber, license_state: licenseState })
       });
       const data = await res.json();
       if (data.ok) setSuccess("🎉 " + company + " is now live! Your Tenant ID is: " + data.tenant_id + ". Our team will assign your phone number shortly.");
@@ -58,6 +61,25 @@ export default function OnboardPage() {
               ))}
             </select>
           </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1">Are you a licensed real estate agent?</label>
+            <select value={licenseType} onChange={e => setLicenseType(e.target.value)} className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-white">
+              <option value="investor">No - I am a real estate investor</option>
+              <option value="licensed_agent">Yes - I hold a real estate license</option>
+            </select>
+          </div>
+          {licenseType === "licensed_agent" && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">License #</label>
+                <input value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} placeholder="e.g. 123456" className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-white" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">State</label>
+                <input value={licenseState} onChange={e => setLicenseState(e.target.value)} placeholder="GA" className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-white" />
+              </div>
+            </div>
+          )}
           <button disabled={loading} type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
             {loading ? "Provisioning AI Sales Rep..." : "Start $149/mo Trial"}
           </button>
