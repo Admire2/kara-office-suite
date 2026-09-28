@@ -1,44 +1,47 @@
-import AskBox from "@/app/components/AskBox";
-import Footer from "@/app/components/Footer";
-import Orchestrator from "./components/Orchestrator";
-import PromptLogger from "./components/PromptLogger";
-import ErrorCatcher from "./components/ErrorCatcher";
-import SessionTracker from './components/SessionTracker';
-import AffiliateWidget from './components/AffiliateWidget';
-import ReferralTracker from './components/ReferralTracker';
 import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
+import MobileNav from "@/components/MobileNav";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: "FounderPilot AI",
-  description: "AI tools for entrepreneurs",
+  title: "FounderPilot AI - KAWS",
+  description: "KaraKata AI Web Services - Real Estate AI Suite",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <body
-        className="min-h-screen flex"
-        style={{ backgroundColor: "#020617", color: "#f8fafc" }}
-      >
-        <PromptLogger />
-        <ErrorCatcher />
-        <ReferralTracker />
-        <AffiliateWidget />
-        <SessionTracker />
-        <Sidebar />
-        <div className="flex-1 overflow-y-auto">{children}
-        <Footer />
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+        <meta name="theme-color" content="#020617" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="KAWS" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <div className="md:hidden">
+          <MobileNav>{children}</MobileNav>
         </div>
-            <Orchestrator />
-          
-    <AskBox />
-    </body>
+        <div className="hidden md:block">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
