@@ -14,7 +14,9 @@ const tools = [
   { name: "Kara Reader", icon: "📄", status: "IN BUILD", desc: "Drop an Offering Memorandum, rent roll, lease or settlement statement: Kara extracts every financial line and flags hidden risks in seconds.", beats: "Replaces V7 Labs + Relm CRE risk scans" },
   { name: "Kara Nurture", icon: "💬", status: "IN BUILD", desc: "Automated SMS and email drip that keeps every lead warm until an appointment is booked - in the lead's own language.", beats: "Replaces Structurely + Ylopo rAIya" },
   { name: "Kara Valuate", icon: "🎁", status: "LIVE SOON", desc: "Free public tool: any homeowner types an address, gets an instant AI estimate - and becomes a qualified seller lead in your CRM.", beats: "The free-valuation lead magnet Zillow guards jealously" },
-  { name: "Kara Autopilot", icon: "🛰️", status: "LIVE", desc: "Your AI COO: nightly autonomous workflows - pull lists, skip-trace, launch call campaigns, compile briefings, nudge humans.", beats: "The autonomous-workflow layer rivals charge extra for" }
+  { name: "Kara Autopilot", icon: "🛰️", status: "LIVE", desc: "Your AI COO: nightly autonomous workflows - pull lists, skip-trace, launch call campaigns, compile briefings, nudge humans.", beats: "The autonomous-workflow layer rivals charge extra for" },
+  { name: "Kara Coordinator", icon: "📋", status: "LIVE", desc: "Generate professional closing timelines and task lists instantly. Never miss a deadline.", beats: "Replaces ListedKit ($49/transaction)" },
+  { name: "Kara Contract Review", icon: "⚖️", status: "LIVE", desc: "Paste contract text to instantly flag missing clauses and risky terms.", beats: "Replaces Spellbook (Enterprise)" }
 ];
 
 export default function RealEstateSuitePage() {
@@ -23,7 +25,7 @@ export default function RealEstateSuitePage() {
       <header className="max-w-6xl mx-auto px-6 py-14">
         <div className="text-sm font-bold tracking-widest text-indigo-400 uppercase mb-3">KAWS Member 02</div>
         <h1 className="text-4xl font-bold mb-4">KAWS Real Estate Suite</h1>
-        <p className="text-lg text-slate-400 max-w-3xl">Fourteen AI agents that cover the whole deal cycle: find it, rank it, map it, analyze it, call the owner, negotiate, watch the auction, and never drop the follow-up.</p>
+        <p className="text-lg text-slate-400 max-w-3xl">Sixteen AI agents that cover the whole deal cycle: find it, rank it, map it, analyze it, call the owner, negotiate, watch the auction, and never drop the follow-up.</p>
       </header>
 
       <section className="max-w-6xl mx-auto px-6 pb-8 grid md:grid-cols-2 gap-5">
@@ -57,7 +59,7 @@ export default function RealEstateSuitePage() {
 
       <section className="max-w-6xl mx-auto px-6 pb-8">
         <div className="rounded-xl border border-slate-700 bg-slate-900 p-5 text-sm text-slate-300">
-          <span className="font-bold text-white">The viral stack vs KAWS:</span> competitors glue together Claude + PropStream + Retell + skip-tracing for ~$300/mo - five tools, one language, zero accountability. KAWS Pro ($399) ships fourteen agents that share one brain, one CRM and one phone pool, in five languages, with an AI COO that nags you until leads are contacted. Starter ($149) already out-calls their entire stack.
+          <span className="font-bold text-white">The viral stack vs KAWS:</span> competitors glue together Claude + PropStream + Retell + skip-tracing for ~$300/mo - five tools, one language, zero accountability. KAWS Pro ($399) ships sixteen agents that share one brain, one CRM and one phone pool, in five languages, with an AI COO that nags you until leads are contacted. Starter ($149) already out-calls their entire stack.
         </div>
       </section>
 
