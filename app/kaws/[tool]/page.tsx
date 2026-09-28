@@ -1,10 +1,11 @@
 import Link from "next/link";
 
-export default function ToolComingSoon({ params }: { params: Promise<{ tool: string }> }) {
-  const resolvedParams = typeof params === 'object' && 'tool' in params ? params : { tool: 'tool' };
-  const toolName = 'tool' in (params as any) ? (params as any).tool : 'this feature';
+export default async function ToolComingSoon({ params }: { params: Promise<{ tool: string }> }) {
+  // In Next.js 15, params is a Promise, so we await it
+  const { tool } = await params;
   
-  const formattedName = toolName
+  // Format "mobile-dfd" to "Mobile Dfd" or "scout" to "Scout"
+  const formattedName = tool
     .split('-')
     .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
@@ -30,13 +31,13 @@ export default function ToolComingSoon({ params }: { params: Promise<{ tool: str
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <Link 
             href="/kaws/real-estate" 
-            className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition"
+            className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition text-center"
           >
             ← Back to Real Estate Suite
           </Link>
           <Link 
             href="/onboard" 
-            className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition"
+            className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition text-center"
           >
             Launch Available Agents 🚀
           </Link>
