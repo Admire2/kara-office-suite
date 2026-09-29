@@ -1,19 +1,19 @@
 import Link from "next/link";
 
 const tools = [
-  { name: "Kara Scout", href: "/kaws/scout", icon: "🕵️", status: "IN BUILD", desc: "Say your buy-box in plain language. Kara pulls county records, filters absentee owners, skip-traces at $0.09/lead.", beats: "Replaces PropStream + DealMachine" },
-  { name: "Kara Leaderboard", href: "/kaws/leaderboard", icon: "", status: "IN BUILD", desc: "Live leaderboard of underpriced and overpriced properties.", beats: "The viral NYC leaderboard tool" },
-  { name: "Kara Map", href: "/kaws/map", icon: "🗺️", status: "IN BUILD", desc: "Interactive deal map scored by transit, schools, amenities.", beats: "Replaces spreadsheet comps" },
-  { name: "Kara Investor", href: "/kaws/investor", icon: "📊", status: "IN BUILD", desc: "Voice-enabled deal analyzer: ARV, rehab budget, rental yield.", beats: "Replaces spreadsheets + HouseCanary" },
+  { name: "Kara Scout", href: "/kaws/scout", icon: "🕵️", status: "LIVE", desc: "Say your buy-box in plain language. Kara pulls county records, filters absentee owners, skip-traces at $0.09/lead.", beats: "Replaces PropStream + DealMachine" },
+  { name: "Kara Leaderboard", href: "/kaws/leaderboard", icon: "", status: "LIVE", desc: "Live leaderboard of underpriced and overpriced properties.", beats: "The viral NYC leaderboard tool" },
+  { name: "Kara Map", href: "/kaws/map", icon: "🗺️", status: "LIVE", desc: "Interactive deal map scored by transit, schools, amenities.", beats: "Replaces spreadsheet comps" },
+  { name: "Kara Investor", href: "/kaws/investor", icon: "📊", status: "LIVE", desc: "Voice-enabled deal analyzer: ARV, rehab budget, rental yield.", beats: "Replaces spreadsheets + HouseCanary" },
   { name: "Kara Caller", href: "/kaws/caller", icon: "📲", status: "LIVE ENGINE", desc: "Upload 100 absentee owners. Kara calls every one while you sleep.", beats: "Replaces Retell AI" },
-  { name: "Kara Negotiator", href: "/kaws/negotiator", icon: "🤝", status: "IN BUILD", desc: "Drafts offers and counter-offers, then negotiates terms.", beats: "The AI COO negotiator" },
-  { name: "Kara Scriptwriter", href: "/kaws/scriptwriter", icon: "✍️", status: "IN BUILD", desc: "Writes per-lead call scripts and email outreach.", beats: "Replaces manual copywriting" },
-  { name: "Kara Auction", href: "/kaws/auction", icon: "🔨", status: "IN BUILD", desc: "Watches sheriff sales and alerts you when a deal matches.", beats: "Replaces manual monitoring" },
+  { name: "Kara Negotiator", href: "/kaws/negotiator", icon: "🤝", status: "LIVE", desc: "Drafts offers and counter-offers, then negotiates terms.", beats: "The AI COO negotiator" },
+  { name: "Kara Scriptwriter", href: "/kaws/scriptwriter", icon: "✍️", status: "LIVE", desc: "Writes per-lead call scripts and email outreach.", beats: "Replaces manual copywriting" },
+  { name: "Kara Auction", href: "/kaws/auction", icon: "🔨", status: "LIVE", desc: "Watches sheriff sales and alerts you when a deal matches.", beats: "Replaces manual monitoring" },
   { name: "Kara CRM", href: "/kaws/crm", icon: "️", status: "LIVE", desc: "Every call becomes a structured intake form with a completeness score.", beats: "Replaces Follow Up Boss" },
-  { name: "Kara Vision", href: "/kaws/vision", icon: "👁️", status: "IN BUILD", desc: "Send a photo: Kara grades condition, estimates rehab and stages virtually.", beats: "Replaces Restb.ai" },
-  { name: "Kara Reader", href: "/kaws/reader", icon: "📄", status: "IN BUILD", desc: "Drop an OM or lease: Kara extracts financials and flags risks.", beats: "Replaces V7 Labs" },
-  { name: "Kara Nurture", href: "/kaws/nurture", icon: "💬", status: "IN BUILD", desc: "Automated SMS/email drip keeps leads warm.", beats: "Replaces Structurely" },
-  { name: "Kara Valuate", href: "/kaws/valuate", icon: "🎁", status: "LIVE SOON", desc: "Free public tool: instant AI estimate for homeowners.", beats: "The Zillow lead magnet" },
+  { name: "Kara Vision", href: "/kaws/vision", icon: "👁️", status: "LIVE", desc: "Send a photo: Kara grades condition, estimates rehab and stages virtually.", beats: "Replaces Restb.ai" },
+  { name: "Kara Reader", href: "/kaws/reader", icon: "📄", status: "LIVE", desc: "Drop an OM or lease: Kara extracts financials and flags risks.", beats: "Replaces V7 Labs" },
+  { name: "Kara Nurture", href: "/kaws/nurture", icon: "💬", status: "LIVE", desc: "Automated SMS/email drip keeps leads warm.", beats: "Replaces Structurely" },
+  { name: "Kara Valuate", href: "/kaws/valuate", icon: "🎁", status: "LIVE", desc: "Free public tool: instant AI estimate for homeowners.", beats: "The Zillow lead magnet" },
   { name: "Kara Autopilot", href: "/kaws/autopilot", icon: "🛰️", status: "LIVE", desc: "Your AI COO: nightly autonomous workflows.", beats: "The autonomous layer" },
   { name: "Kara Coordinator", href: "/kaws/coordinator", icon: "📋", status: "LIVE", desc: "Generate professional closing timelines instantly.", beats: "Replaces ListedKit" },
   { name: "Kara Contract Review", href: "/kaws/contract", icon: "⚖️", status: "LIVE", desc: "Paste contract text to flag missing clauses.", beats: "Replaces Spellbook" },
@@ -29,7 +29,7 @@ export default function RealEstateSuitePage() {
       <header className="max-w-6xl mx-auto px-6 py-14">
         <div className="text-sm font-bold tracking-widest text-indigo-400 uppercase mb-3">KAWS Member 02</div>
         <h1 className="text-4xl font-bold mb-4">KAWS Real Estate Suite</h1>
-        <p className="text-lg text-slate-400 max-w-3xl">Eighteen AI agents that cover the whole deal cycle: find it, rank it, map it, analyze it, call the owner, negotiate, watch the auction, and never drop the follow-up.</p>
+        <p className="text-lg text-slate-400 max-w-3xl">Twenty AI agents that cover the whole deal cycle: find it, rank it, map it, analyze it, call the owner, negotiate, watch the auction, and never drop the follow-up.</p>
       </header>
 
       <section className="max-w-6xl mx-auto px-6 pb-8 grid md:grid-cols-2 gap-5">
