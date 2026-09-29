@@ -2,10 +2,10 @@ import { KAWS_AGENTS } from "@/lib/kaws-agents";
 import { rentcastLeads, rentcastLookup } from "@/lib/property-data";
 import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 90;
 
 const TRACK_SUFFIX: Record<string, string> = {
-  investor: "\n\nTRACK: UNLICENSED REAL ESTATE INVESTOR. Advise strictly from public records, wholesale/assignment strategies and MAO/ARV math. Never reference MLS-only data and never suggest activities requiring a license. Remind the user to verify ownership via county records and skip-trace.",
+  investor: "\n\nTRACK: UNLICENSED REAL ESTATE INVESTOR. Advise strictly from public records, wholesale/assignment strategies and MAO/ARV math. Never reference MLS-only data and never suggest activities requiring a license.",
   agent: "\n\nTRACK: LICENSED REAL ESTATE AGENT. You may reference MLS comps, CMA standards, IDX feeds and fiduciary duties. Keep all advice compliant with state license law and fair-housing rules."
 };
 
@@ -21,42 +21,66 @@ export async function POST(req: Request) {
   const place = String(b.place || "");
 
   let live: any[] = [];
-  let dataSource = "SAMPLE (connect RentCast for live records)";
+  let dataSource = "SAMPLE (unverified)";
   try {
     if (["scout", "leaderboard", "map"].includes(def.id) && place) live = await rentcastLeads(place, 8);
     if (def.id === "valuate" && rawInput) { const one = await rentcastLookup(rawInput); if (one) live = [one]; }
-    if (live.length) dataSource = "LIVE (RentCast public records)";
+    if (live.length) dataSource = "LIVE (RentCast records)";
   } catch {}
 
-  const grounding = live.length
-    ? "\n\nLIVE MARKET DATA (real public records). Use ONLY these addresses and values. Do NOT invent any address:\n" + JSON.stringify(live)
-    : "\n\nNOTE: No live data provider connected. Label every address or figure you produce as SAMPLE/ILLUSTRATIVE and tell the user to connect RentCast for live records.";
+  const rentcastGrounding = live.length
+    ? "\n\nVERIFIED RECORDS FROM RENTCAST (prefer these):\n" + JSON.stringify(live)
+    : "";
+
+  const searchInstruction = def.search
+    ? "\n\nYou MUST use live web search now. Only return real, verifiable addresses/listings with source_url. Never invent data."
+    : "";
 
   let model = "qwen/qwen-2.5-72b-instruct";
+  if (def.search) model = "perplexity/sonar";
   let messages: any[];
   if (def.vision && /^https?:\/\//.test(rawInput.trim())) {
     model = "qwen/qwen2.5-vl-72b-instruct";
     messages = [
       { role: "system", content: def.system + TRACK_SUFFIX[track] },
-      { role: "user", content: [{ type: "text", text: "Analyze this property photo." + grounding }, { type: "image_url", image_url: { url: rawInput.trim() } }] }
+      { role: "user", content: [{ type: "text", text: "Analyze this property photo." + rentcastGrounding }, { type: "image_url", image_url: { url: rawInput.trim() } }] }
     ];
   } else {
-    const userInput = (def.fields ? JSON.stringify(b.fields || {}) : rawInput) + (place ? "\nMarket: " + place : "") + grounding;
+    const userInput = (def.fields ? JSON.stringify(b.fields || {}) : rawInput) + (place ? "\nMarket: " + place : "") + rentcastGrounding + searchInstruction;
     messages = [{ role: "system", content: def.system + TRACK_SUFFIX[track] }, { role: "user", content: userInput }];
   }
 
-  let out: any = { result: "Model returned no content." };
-  try {
+  let out: any = null;
+  let usedModel = model;
+  const call = async (m: string, msgs: any[]) => {
     const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, messages, temperature: 0.4 })
+      body: JSON.stringify({ model: m, messages: msgs, temperature: 0.2 })
     });
+    if (!r.ok) throw new Error("HTTP " + r.status);
     const j: any = await r.json();
-    const text = j?.choices?.[0]?.message?.content || "";
+    return j?.choices?.[0]?.message?.content || "";
+  };
+
+  try {
+    const text = await call(model, messages);
     try { const m = text.match(/\{[\s\S]*\}/); out = m ? JSON.parse(m[0]) : { result: text }; } catch { out = { result: text }; }
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: "LLM call failed: " + e.message }, { status: 502 });
+  } catch {
+    // Fallback: search model failed -> plain Qwen with honest SAMPLE labeling
+    usedModel = "qwen/qwen-2.5-72b-instruct";
+    if (dataSource !== "LIVE (RentCast records)") dataSource = "SAMPLE (search unavailable)";
+    const fbMessages = [messages[0], { role: "user", content: String(messages[1].content).replace(searchInstruction, "\n\nNo live search available right now. Label every address as SAMPLE/ILLUSTRATIVE.") }];
+    try {
+      const text = await call(usedModel, fbMessages);
+      try { const m = text.match(/\{[\s\S]*\}/); out = m ? JSON.parse(m[0]) : { result: text }; } catch { out = { result: text }; }
+    } catch (e: any) {
+      return NextResponse.json({ ok: false, error: "LLM call failed: " + e.message }, { status: 502 });
+    }
+  }
+
+  if (def.search && dataSource !== "LIVE (RentCast records)" && usedModel.startsWith("perplexity")) {
+    dataSource = "LIVE (web-grounded search)";
   }
 
   if (def.id === "investor" && b.fields) {
@@ -70,5 +94,5 @@ export async function POST(req: Request) {
     out.metrics = { max_allowable_offer: Math.round(mao), one_percent_rule: onePct.toFixed(2) + "%", gross_yield: gross.toFixed(2) + "%", verdict: p <= mao ? "DEAL - at or below MAO" : "OVER MAO by $" + Math.round(p - mao) };
   }
 
-  return NextResponse.json({ ok: true, agent: def.id, track, dataSource, output: out });
+  return NextResponse.json({ ok: true, agent: def.id, track, dataSource, model: usedModel, output: out });
 }
