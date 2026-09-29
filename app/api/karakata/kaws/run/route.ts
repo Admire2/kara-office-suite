@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
 
-const FREE_QWEN = "qwen/qwen3.8-27b:free";
+const FREE_QWEN = "qwen/qwen-2.5-72b-instruct:free";
 const PAID_QWEN = "qwen/qwen-2.5-72b-instruct";
 const SONAR = "perplexity/sonar";
 
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
   if (live.length) dataSource = "LIVE (RentCast records)";
   else if (usedModel === SONAR) dataSource = "LIVE (web-grounded search)";
   else if (def.search) dataSource = "SAMPLE (unverified)";
-  else dataSource = usedModel === FREE_QWEN ? "FREE TIER (Qwen)" : "PAID TIER";
+  else dataSource = usedModel.includes(":free") ? "FREE TIER (Qwen)" : "PAID TIER";
 
   if (def.id === "investor" && b.fields) {
     const p = Number(b.fields.purchase_price) || 0;
