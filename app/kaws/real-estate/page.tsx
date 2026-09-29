@@ -19,6 +19,7 @@ const tools = [
   { name: "Kara Contract Review", href: "/kaws/contract", icon: "⚖️", status: "LIVE", desc: "Paste contract text to flag missing clauses.", beats: "Replaces Spellbook" },
   { name: "Kara MCP Server", href: "/kaws/mcp", icon: "🔌", status: "LIVE", desc: "Exposes Kara tools to Claude Desktop and Cursor.", beats: "The open-standard connector" },
   { name: "Kara Mobile DFD", href: "/kaws/mobile-dfd", icon: "", status: "LIVE", desc: "Driving for Dollars: Snap photos, auto-add to Scout.", beats: "Replaces DealMachine" },
+  { name: "Kara Sentinel", href: "/kaws/sentinel", icon: "👁️", status: "LIVE", desc: "Real-time health monitoring for 150+ concurrent voice agents.", beats: "Enterprise uptime monitoring" },
   { name: "Kara Lifeline & Downsize", href: "/kaws/lifeline", icon: "️", status: "LIVE", desc: "Pre-foreclosure rescue and downsizing intervention. Empathetic AI outreach.", beats: "Replaces cold-calling vultures" }
 ];
 
