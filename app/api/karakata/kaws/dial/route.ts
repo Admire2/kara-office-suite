@@ -8,35 +8,52 @@ const SCRIPTS: Record<string, string> = {
 };
 
 export async function POST(req: Request) {
-  const b: any = await req.json().catch(() => ({}));
-  const { phone, leadName, address, lane, verified, dncCleared } = b;
+  try {
+    const b: any = await req.json().catch(() => ({}));
+    const { phone, leadName, address, lane, verified, dncCleared } = b;
 
-  // COMPLIANCE GATES - the API itself refuses unsafe calls
-  if (!verified) return NextResponse.json({ ok: false, error: "REFUSED: Lead owner-match not verified. Run SkipTracer verification first." }, { status: 409 });
-  if (!dncCleared) return NextResponse.json({ ok: false, error: "REFUSED: DNC scrub not confirmed for this number." }, { status: 409 });
-  if (!phone) return NextResponse.json({ ok: false, error: "Missing phone" }, { status: 400 });
+    if (!verified) return NextResponse.json({ ok: false, error: "REFUSED: Lead owner-match not verified." }, { status: 409 });
+    if (!dncCleared) return NextResponse.json({ ok: false, error: "REFUSED: DNC scrub not confirmed." }, { status: 409 });
+    if (!phone) return NextResponse.json({ ok: false, error: "Missing phone" }, { status: 400 });
 
-  const apiKey = process.env.VAPI_API_KEY;
-  const assistantId = process.env.VAPI_ASSISTANT_ID;
-  const phoneNumberId = process.env.VAPI_PHONE_NUMBER_ID;
-  if (!apiKey || !assistantId || !phoneNumberId) return NextResponse.json({ ok: false, error: "Missing VAPI env vars" }, { status: 500 });
+    const apiKey = process.env.VAPI_API_KEY;
+    const assistantId = process.env.VAPI_ASSISTANT_ID;
+    const phoneNumberId = process.env.VAPI_PHONE_NUMBER_ID;
+    
+    if (!apiKey || !assistantId || !phoneNumberId) {
+      return NextResponse.json({ ok: false, error: "Missing VAPI env vars. Check Vercel settings." }, { status: 500 });
+    }
 
-  const script = (SCRIPTS[lane] || SCRIPTS.off_market)
-    .replace("{name}", leadName || "there")
-    .replace("{address}", address || "your property");
+    const script = (SCRIPTS[lane] || SCRIPTS.off_market)
+      .replace("{name}", leadName || "there")
+      .replace("{address}", address || "your property");
 
-  const r = await fetch("https://api.vapi.ai/call/phone", {
-    method: "POST",
-    headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      phoneNumberId, assistantId,
-      customer: { number: phone },
-      assistantOverrides: {
-        variableValues: { life_event: lane, opening_script: script, first_message: script }
-      }
-    })
-  });
-  const j: any = await r.json();
-  if (!r.ok) return NextResponse.json({ ok: false, error: j?.message || "Vapi error" }, { status: 502 });
-  return NextResponse.json({ ok: true, callId: j.id, lane });
+    const r = await fetch("https://api.vapi.ai/call/phone", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phoneNumberId, assistantId,
+        customer: { number: phone },
+        assistantOverrides: {
+          variableValues: { life_event: lane, opening_script: script, first_message: script }
+        }
+      })
+    });
+
+    const text = await r.text();
+    let j: any = {};
+    try {
+      j = JSON.parse(text);
+    } catch {
+      return NextResponse.json({ ok: false, error: "Vapi returned non-JSON: " + text.substring(0, 100) }, { status: 502 });
+    }
+
+    if (!r.ok) {
+      return NextResponse.json({ ok: false, error: j?.message || "Vapi HTTP error " + r.status }, { status: 502 });
+    }
+    
+    return NextResponse.json({ ok: true, callId: j.id, lane });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: "Server crashed: " + e.message }, { status: 500 });
+  }
 }
