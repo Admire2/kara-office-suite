@@ -22,6 +22,7 @@ import { comparisonHTML } from './comparison';
 import { FileText, Table as TableIcon, Presentation, FileBadge, Mail, StickyNote, Database, PenTool, Video, HardDrive, Kanban, Sparkles, Shield, Bot, Send, Loader2, LayoutDashboard, Plus, Terminal, Power, Save, FolderOpen, Search } from 'lucide-react';
 import KaraSlides from './components/KaraSlides';
 import KaraMail from './components/KaraMail';
+import KaraNotes from './components/KaraNotes';
 import KaraIntelligence from './components/KaraIntelligence';
 import { publishArtifact } from './lib/intelligence';
 
@@ -825,8 +826,9 @@ function App() {
 
             {activeApp === 'pdf' && <KaraPDF />}
             {activeApp === 'mail' && <KaraMail />}
+            {activeApp === 'notes' && <KaraNotes />}
 
-            {activeApp === 'notes' && (
+            {false && (
               <div className="flex w-full h-full bg-white">
                 <div className="w-64 border-r border-slate-200 bg-slate-50 flex flex-col">
                   <div className="p-3 border-b border-slate-200">
@@ -900,6 +902,7 @@ function App() {
   );
 }
 export default App;
+
 
 
 
