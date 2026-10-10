@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useRef, useMemo } from 'react';
 import { evaluate } from 'mathjs';
 import { Download, Bot, HelpCircle, TrendingUp, Activity } from 'lucide-react';
+import { publishArtifact } from '../lib/intelligence';
 
 const ROW_H = 24;
 const colName = (i: number) => String.fromCharCode(65 + i);
@@ -478,6 +479,7 @@ Be precise with numbers. Reference actual cell values.`;
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="bg-slate-50 border-b border-slate-200 p-2 flex items-center gap-2 flex-shrink-0 flex-wrap relative">
+        <button onClick={() => { publishArtifact('sheets', 'Kara Sheets data', sheetCSV().join('\n')); alert('Sheet published to Kara Intelligence.'); }} className="px-3 py-1.5 bg-slate-800 text-white text-xs rounded hover:bg-slate-700">Publish</button>
         <button onClick={analyzeSheet} className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"><Bot size={12}/> Kara AI: Analyze</button>
         <button onClick={() => setQuantMode(q => !q)} className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded ${quantMode ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'}`}><Activity size={12}/> Quant Mode: {quantMode ? 'ON' : 'OFF'}</button>
         {quantMode && <button onClick={analyzeTrades} className="flex items-center gap-1 px-3 py-1.5 bg-orange-600 text-white text-xs rounded hover:bg-orange-700"><TrendingUp size={12}/> Trade Analyzer</button>}
@@ -593,3 +595,4 @@ Be precise with numbers. Reference actual cell values.`;
     </div>
   );
 }
+

@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { Plus, Copy, Trash2, ArrowUp, ArrowDown, Play, Download } from 'lucide-react';
+import { publishArtifact } from '../lib/intelligence';
 
 type Slide = { id: number; layout: string; title: string; body: string };
 
@@ -43,6 +44,18 @@ export default function KaraSlides({ seekReport }: { seekReport?: string }) {
   const [deckPhase, setDeckPhase] = useState('');
 
   useEffect(() => { localStorage.setItem('karaSlidesDeck', JSON.stringify(slides)); }, [slides]);
+  useEffect(() => {
+    const h = (e: Event) => {
+      const text = String((e as CustomEvent).detail || '');
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      if (!lines.length) return;
+      const deck: Slide[] = [{ id: Date.now(), layout: 'title', title: lines[0], body: lines.slice(1, 3).join(' | ') }];
+      for (let i = 3; i < lines.length; i += 4) deck.push({ id: Date.now() + i, layout: 'content', title: lines[i], body: lines.slice(i + 1, i + 5).map(b => '- ' + b).join('\n') });
+      setSlides(deck); setActiveId(deck[0].id);
+    };
+    window.addEventListener('kara-intel-slides', h);
+    return () => window.removeEventListener('kara-intel-slides', h);
+  }, []);
   useEffect(() => { if (seekReport && seekReport.trim()) localStorage.setItem('karaSeekLastReport', seekReport); }, [seekReport]);
 
   const theme = THEMES[themeIdx];
@@ -171,6 +184,7 @@ export default function KaraSlides({ seekReport }: { seekReport?: string }) {
             {THEMES.map((t, i) => <option key={t.name} value={i}>{t.name}</option>)}
           </select>
           <button onClick={() => { setPresentIdx(activeIdx >= 0 ? activeIdx : 0); setPresenting(true); }} className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"><Play size={12}/> Present</button>
+          <button onClick={() => { publishArtifact('slides', slides[0]?.title || 'Kara Deck', slides.map(s => s.title + '\n' + s.body).join('\n')); alert('Deck published to Kara Intelligence.'); }} className="px-3 py-1.5 bg-slate-800 text-white text-xs rounded hover:bg-slate-700">Publish</button>
           <button onClick={exportHTML} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700"><Download size={12}/> Export HTML</button>
           <div className="flex gap-1 flex-wrap w-full">
             {DECK_CHIPS.map((ch, i) => (
@@ -213,4 +227,5 @@ export default function KaraSlides({ seekReport }: { seekReport?: string }) {
     </div>
   );
 }
+
 

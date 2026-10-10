@@ -21,6 +21,9 @@ import KaraPDF from './components/KaraPDF';
 import { comparisonHTML } from './comparison';
 import { FileText, Table as TableIcon, Presentation, FileBadge, Mail, StickyNote, Database, PenTool, Video, HardDrive, Kanban, Sparkles, Shield, Bot, Send, Loader2, LayoutDashboard, Plus, Terminal, Power, Save, FolderOpen, Search } from 'lucide-react';
 import KaraSlides from './components/KaraSlides';
+import KaraMail from './components/KaraMail';
+import KaraIntelligence from './components/KaraIntelligence';
+import { publishArtifact } from './lib/intelligence';
 
 const FONTS = ['Calibri','Segoe UI','Arial','Times New Roman','Courier New','Georgia','Verdana','Tahoma','Cambria','Candara','Consolas','Constantia','Corbel','Trebuchet MS','Palatino Linotype','Garamond','Book Antiqua','Lucida Console','David','Miriam','Rod','Arial Hebrew','Traditional Arabic','Simplified Arabic','Nirmala UI','Mangal','SimSun','Microsoft YaHei','Meiryo','MS Gothic','Malgun Gothic','Leelawadee UI','Nyala'];
 const SIZES = ['8pt','9pt','10pt','11pt','12pt','14pt','16pt','18pt','20pt','24pt','28pt','36pt','48pt','72pt'];
@@ -152,6 +155,7 @@ function App() {
   const [writeAssist, setWriteAssist] = useState(true);
   const [sugg, setSugg] = useState(null);
   const [fontOpen, setFontOpen] = useState(false);
+  const [showIntel, setShowIntel] = useState(false);
   const [sizeOpen, setSizeOpen] = useState(false);
   const [curFont, setCurFont] = useState('Calibri');
   const [curSize, setCurSize] = useState('12pt');
@@ -574,8 +578,7 @@ function App() {
     { id: 'word', name: 'Kara Word', icon: FileText, color: 'text-blue-500', bg: 'bg-blue-50', category: 'Core' },
     { id: 'sheets', name: 'Kara Sheets', icon: TableIcon, color: 'text-emerald-500', bg: 'bg-emerald-50', category: 'Core' },
     { id: 'slides', name: 'Kara Slides', icon: Presentation, color: 'text-orange-500', bg: 'bg-orange-50', category: 'Core' },
-    { id: 'pdf', name: 'Kara PDF', icon: FileBadge, color: 'text-red-500', bg: 'bg-red-50', category: 'Core' },
-    { id: 'mail', name: 'Kara Mail', icon: Mail, color: 'text-indigo-500', bg: 'bg-indigo-50', category: 'Core' },
+    { id: 'mail', name: 'Kara Mail', icon: Mail, color: 'text-blue-500', bg: 'bg-blue-50', category: 'Core' },
     { id: 'notes', name: 'Kara Notes', icon: StickyNote, color: 'text-yellow-500', bg: 'bg-yellow-50', category: 'Core' },
     { id: 'base', name: 'Kara Base', icon: Database, color: 'text-purple-500', bg: 'bg-purple-50', category: 'Extended' },
     { id: 'design', name: 'Kara Design', icon: PenTool, color: 'text-pink-500', bg: 'bg-pink-50', category: 'Extended' },
@@ -592,13 +595,13 @@ function App() {
       if (aiMode === 'seek') {
         const response = await fetch('http://localhost:3001/api/seek', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ goal: promptToSend }) });
         const data = await response.json();
-        if (data.success) { setAgentLogs(data.logs); setAiResponse(data.answer); } else setAiResponse('Agent failed.');
+        if (data.success) { setAgentLogs(data.logs); setAiResponse(data.answer); publishArtifact('seek', promptToSend, data.answer); } else setAiResponse('Agent failed.');
       } else if (aiMode === 'cloud') {
         const response = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt: `You are Kara Cloud, a fast smart cloud AI. Year 2026. User: ${promptToSend}`, stream: false }) });
-        const data = await response.json(); setAiResponse(data.response);
+        const data = await response.json(); setAiResponse(data.response); publishArtifact('seek', promptToSend, data.response);
       } else if (aiMode === 'local') {
         const response = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt: `Offline text assistant. Task: ${promptToSend}`, stream: false }) });
-        const data = await response.json(); setAiResponse(data.response);
+        const data = await response.json(); setAiResponse(data.response); publishArtifact('seek', promptToSend, data.response);
       }
     } catch (e) { setAiResponse('⚠️ Engine error.'); setPrompt(promptToSend); }
     finally { setIsThinking(false); }
@@ -680,6 +683,7 @@ function App() {
               </>
             )}
           </div>
+          <button onClick={() => setShowIntel(true)} className="mr-2 px-3 py-1.5 bg-slate-900 text-white text-xs rounded hover:bg-slate-700">Kara Intelligence</button>
           <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg border border-slate-200">
             <button onClick={() => setAiMode('off')} className={`px-2 py-1.5 text-[10px] rounded transition flex items-center gap-1 ${aiMode === 'off' ? 'bg-slate-300 text-slate-700 shadow' : 'text-slate-500'}`}><Power size={10} /> Off</button>
             <button onClick={() => setAiMode('seek')} className={`px-2 py-1.5 text-[10px] rounded transition flex items-center gap-1 ${aiMode === 'seek' ? 'bg-purple-100 text-purple-700 shadow' : 'text-slate-500'}`}><Bot size={10} /> Seek (Pro)</button>
@@ -723,6 +727,7 @@ function App() {
                     <button onClick={() => saveDoc('doc')} className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"><Save size={12}/> Save As</button>
                     <button onClick={() => document.getElementById('kara-open-input').click()} className="flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-700 text-xs rounded hover:bg-slate-200"><FolderOpen size={12}/> Open</button>
                     <button onClick={copyRich} className="flex items-center gap-1 px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">Copy Rich</button>
+                    <button onClick={() => { publishArtifact('word', deriveName(), editor.getText()); alert('Published to Kara Intelligence.'); }} className="px-3 py-1 bg-slate-800 text-white text-xs rounded hover:bg-slate-700">Publish</button>
                     <button onClick={copyPlain} className="flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-700 text-xs rounded hover:bg-slate-200">Copy Text</button>
                   </div>
                 </div>
@@ -819,6 +824,7 @@ function App() {
             )}
 
             {activeApp === 'pdf' && <KaraPDF />}
+            {activeApp === 'mail' && <KaraMail />}
 
             {activeApp === 'notes' && (
               <div className="flex w-full h-full bg-white">
@@ -848,7 +854,7 @@ function App() {
 
             {activeApp === 'sheets' && <KaraSheets />}
             {activeApp === 'slides' && <KaraSlides seekReport={aiResponse} />}
-            {!['dashboard', 'word', 'notes', 'sheets', 'slides', 'pdf'].includes(activeApp) && (
+            {!['dashboard', 'word', 'notes', 'sheets', 'slides', 'pdf', 'mail', 'mail'].includes(activeApp) && (
               <div className="w-full h-full flex items-center justify-center text-slate-400">
                 <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 text-center max-w-md">
                   <h2 className="text-xl font-semibold text-slate-800 mb-2">{suiteApps.find(a => a.id === activeApp)?.name} Engine Loading...</h2>
@@ -857,6 +863,7 @@ function App() {
             )}
           </div>
 
+          {showIntel && (<KaraIntelligence onClose={() => setShowIntel(false)} onToWord={(t) => { setActiveApp('word'); setTimeout(() => { if (editor) editor.chain().focus('end').insertContent('<p>' + t.replace(/\n/g, '</p><p>') + '</p>').run(); }, 300); }} onToSlides={(t) => { setActiveApp('slides'); setTimeout(() => { window.dispatchEvent(new CustomEvent('kara-intel-slides', { detail: t })); }, 300); }} />)}
           {activeApp !== 'dashboard' && aiMode !== 'off' && (
             <div className="w-80 bg-white border-l border-slate-200 flex flex-col shadow-lg flex-shrink-0 z-10">
               <div className="p-4 border-b border-slate-200 bg-slate-50">
@@ -893,6 +900,13 @@ function App() {
   );
 }
 export default App;
+
+
+
+
+
+
+
 
 
 

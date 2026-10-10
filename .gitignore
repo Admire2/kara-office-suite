@@ -6,6 +6,9 @@ dist/
 build/
 *.log
 .env
-.env.*
+.env.local
+.env.pricing
 analytics.db
 agent/lk.exe
+.DS_Store
+Thumbs.db
