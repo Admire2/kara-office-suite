@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { Send, Inbox, PenTool, Trash2, Star, Archive, Bot, CheckCircle, AlertCircle, ArrowLeft, Reply } from 'lucide-react';
+import { Send, Inbox, PenTool, Trash2, Star, Archive, Bot, CheckCircle, AlertCircle, ArrowLeft, Reply, CalendarDays } from 'lucide-react';
 
 type Email = { 
   id: string; 
@@ -287,6 +287,10 @@ export default function KaraMail() {
                 className="px-3 py-1.5 text-xs bg-slate-200 text-slate-700 rounded hover:bg-slate-300 flex items-center gap-1">
                 <Reply size={12} /> Reply
               </button>
+              <button onClick={() => { localStorage.setItem('karaCalendarPending', JSON.stringify({ title: selectedEmail.subject, date: new Date().toISOString().slice(0, 10), time: '09:00', source: 'Kara Mail' })); window.dispatchEvent(new CustomEvent('kara-navigate', { detail: { app: 'calendar' } })); }}
+                className="px-3 py-1.5 text-xs bg-amber-100 text-amber-700 rounded hover:bg-amber-200 flex items-center gap-1">
+                <CalendarDays size={12} /> To Calendar
+              </button>
               <button onClick={() => moveToTrash(selectedEmail.id)} className="px-3 py-1.5 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200">
                 <Trash2 size={12} />
               </button>
@@ -368,3 +372,4 @@ export default function KaraMail() {
     </div>
   );
 }
+
