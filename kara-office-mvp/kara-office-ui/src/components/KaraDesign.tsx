@@ -86,11 +86,11 @@ export default function KaraDesign() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'qwen2.5:3b',
-          prompt: `You are a graphic design AI. Generate a JSON array of shapes based on this request: "${aiPrompt}". 
+          prompt: `You are a strict graphic design JSON generator. Generate a JSON array of shapes based on this request:  "${aiPrompt}". 
 Rules: 
 1. Each object must have: id (string), type ('rect', 'circle', or 'text'), x (number 50-700), y (number 50-500), w (number 100-300), h (number 100-300), color (hex string like '#ff0000'), and text (string, only for type 'text'). 
 2. Create 3-5 shapes to make a complete composition. 
-3. Output ONLY the raw JSON array, no markdown formatting, no explanation.`,
+3. CRITICAL: If the request mentions specific text (e.g., 'Dangote Refinery'), you MUST create a shape with type: 'text' containing that exact text. 4. Output ONLY the raw JSON array, no markdown, no explanation.`,
           stream: false
         })
       });
@@ -336,3 +336,4 @@ Rules:
     </div>
   );
 }
+

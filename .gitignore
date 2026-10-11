@@ -12,3 +12,7 @@ analytics.db
 agent/lk.exe
 .DS_Store
 Thumbs.db
+
+kara-desktop/dist/
+kara-desktop/renderer/
+kara-desktop/node_modules/

@@ -1,12 +1,12 @@
-﻿{
+{
   "name": "kara-desktop",
   "version": "1.0.0",
   "description": "Kara Office Sovereign Suite",
+  "author": "FounderPilot",
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
-    "build-win": "electron-builder --win",
-    "build-mac": "electron-builder --mac"
+    "build-win": "electron-builder --win"
   },
   "devDependencies": {
     "electron": "^31.0.0",
@@ -14,7 +14,21 @@
   },
   "build": {
     "appId": "com.karaoffice.suite",
-    "win": { "target": "nsis" },
-    "mac": { "target": "dmg" }
+    "productName": "Kara Office",
+    "directories": {
+      "output": "dist"
+    },
+    "extraResources": [
+      "docs/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

@@ -1,28 +1,21 @@
-﻿const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
 function createWindow() {
-  const win = new BrowserWindow({
-    width: 1500,
-    height: 950,
-    title: 'Kara Office - Sovereign Suite',
-    autoHideMenuBar: true,
-    webPreferences: { nodeIntegration: false, contextIsolation: true }
-  });
-
-  // In dev, load the Vite server. In prod, load the built files.
+  const win = new BrowserWindow({ width: 1500, height: 950, title: 'Kara Office - Sovereign Suite', autoHideMenuBar: true, webPreferences: { nodeIntegration: false, contextIsolation: true } });
+  const logFile = path.join(app.getPath('userData'), 'kara-desktop.log');
+  const log = (m) => { try { fs.appendFileSync(logFile, new Date().toISOString() + ' ' + m + '\n'); } catch (e) {} };
+  win.webContents.on('console-message', (e, level, message) => log('RENDERER: ' + message));
+  win.webContents.on('did-fail-load', (e, code, desc, url) => log('FAIL-LOAD: ' + code + ' ' + desc + ' ' + url));
+  win.webContents.on('did-finish-load', () => log('LOAD-OK: ' + win.webContents.getURL()));
   const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
-  if (isDev) {
-    win.loadURL('http://localhost:5173');
-    // win.webContents.openDevTools(); // Uncomment to debug
-  } else {
-    win.loadFile(path.join(__dirname, '../kara-office-mvp/kara-office-ui/dist/index.html'));
+  if (isDev) { win.loadURL('http://localhost:5173'); } else {
+    const indexPath = path.join(__dirname, 'renderer', 'index.html');
+    log('Loading: ' + indexPath + ' exists=' + fs.existsSync(indexPath));
+    win.loadFile(indexPath);
   }
+  if (process.env.KARA_DEBUG === '1') { win.webContents.openDevTools(); }
 }
-
-app.whenReady().then(() => {
-  createWindow();
-  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
-});
-
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+app.whenReady().then(createWindow);
+app.on('window-all-closed', () => app.quit());

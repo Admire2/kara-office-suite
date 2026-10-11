@@ -3,8 +3,8 @@ import { Plus, Copy, Trash2, ArrowUp, ArrowDown, Play, Download, Upload } from '
 import { jsPDF } from 'jspdf';
 import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
-import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
-pdfjsLib.GlobalWorkerOptions.workerPort = new PdfWorker();
+import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker&inline';
+try { pdfjsLib.GlobalWorkerOptions.workerPort = new PdfWorker(); } catch (e) { console.warn('PDF worker fallback'); }
 import { publishArtifact } from '../lib/intelligence';
 
 type Slide = { id: number; layout: string; title: string; body: string };
@@ -288,6 +288,7 @@ export default function KaraSlides({ seekReport }: { seekReport?: string }) {
     </div>
   );
 }
+
 
 
 
