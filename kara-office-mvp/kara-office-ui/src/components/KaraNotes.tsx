@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { Plus, Search, FileText, Bot, FileDown, ChevronLeft, MoreVertical, Trash2 } from 'lucide-react';
+import { Plus, Search, FileText, Bot, FileDown, ChevronLeft, MoreVertical, Trash2, Upload } from 'lucide-react';
 
 type Note = {
   id: string;
@@ -112,6 +112,8 @@ export default function KaraNotes() {
   };
 
   // MOAT 3: One-Click Promote to Document
+    const exportNote = () => { if (!activeNote) return; const blob = new Blob(['# ' + activeNote.title + '\n\n' + activeNote.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = activeNote.title.replace(/[^a-z0-9]/gi, '_') + '.md'; a.click(); };
+
   const promoteToWord = () => {
     if (!activeNote) return;
     
@@ -249,4 +251,6 @@ export default function KaraNotes() {
     </div>
   );
 }
+
+
 

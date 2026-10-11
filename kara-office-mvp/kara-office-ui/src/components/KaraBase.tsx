@@ -44,6 +44,29 @@ export default function KaraBase() {
     setBases(bs => [b, ...bs]); setActiveId(b.id); setView('grid');
   };
 
+  const exportJSON = () => { if (!base) return; const blob = new Blob([JSON.stringify(base, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = base.name.replace(/[^a-z0-9]/gi, '_') + '.karaBase.json'; a.click(); };
+  const exportCSV = () => { if (!base) return; const esc = (v: any) => '"' + String(v ?? '').replace(/"/g, '""') + '"'; const lines = [base.cols.map(c => esc(c.name)).join(',')].concat(base.rows.map(r => base.cols.map(c => esc(r.cells[c.id])).join(','))); const blob = new Blob([lines.join('\n')], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = base.name.replace(/[^a-z0-9]/gi, '_') + '.csv'; a.click(); };
+  const importFile = (f: File) => {
+    f.text().then(txt => {
+      try {
+        if (f.name.endsWith('.json')) {
+          const obj = JSON.parse(txt);
+          if (obj.cols && obj.rows) { obj.id = Date.now().toString(36); setBases(bs => [obj, ...bs]); setActiveId(obj.id); alert('Base imported from JSON.'); }
+          else alert('JSON must be a Kara Base export (with cols and rows).');
+        } else {
+          const rows = txt.split(/\r?\n/).filter(l => l.trim());
+          const parse = (l: string) => { const out: string[] = []; let cur = '', q = false; for (let i = 0; i < l.length; i++) { const ch = l[i]; if (q) { if (ch === '"') { if (l[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; } else { if (ch === '"') q = true; else if (ch === ',') { out.push(cur); cur = ''; } else cur += ch; } } out.push(cur); return out; };
+          const head = parse(rows[0]);
+          const cols: Col[] = head.map((h, i) => ({ id: 'c' + (i + 1), name: h || ('Col ' + (i + 1)), type: 'text' }));
+          const dataRows: Row[] = rows.slice(1).map((r, ri) => { const cells: Record<string, any> = {}; parse(r).forEach((v, i) => { if (cols[i]) cells[cols[i].id] = v; }); return { id: 'r' + Date.now().toString(36) + ri, cells }; });
+          const b: Base = { id: Date.now().toString(36), name: f.name.replace(/\.[^.]+$/, ''), cols, rows: dataRows };
+          setBases(bs => [b, ...bs]); setActiveId(b.id);
+          alert('CSV imported as new base: ' + dataRows.length + ' rows.');
+        }
+      } catch (e) { alert('Import failed: ' + (e as any).message); }
+    });
+  };
+
   const publishBase = () => {
     if (!base) return;
     const lines = [base.cols.map(c => c.name).join(',')].concat(base.rows.map(r => base.cols.map(c => String(r.cells[c.id] ?? '')).join(',')));
@@ -103,6 +126,9 @@ export default function KaraBase() {
               <button onClick={loadSample} className="px-3 py-1.5 bg-teal-600 text-white text-xs rounded hover:bg-teal-700">Sample Data</button>
               <button onClick={publishBase} className="px-3 py-1.5 bg-slate-800 text-white text-xs rounded hover:bg-slate-700">Publish</button>
               <button onClick={aiBrief} className="px-3 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700">{briefing ? 'Briefing...' : 'AI Brief'}</button>
+              <label className="px-3 py-1.5 bg-slate-600 text-white text-xs rounded hover:bg-slate-500 cursor-pointer">Import<input type="file" accept=".json,.csv" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ''; }} /></label>
+              <button onClick={exportJSON} className="px-3 py-1.5 bg-slate-200 text-slate-700 text-xs rounded hover:bg-slate-300">Export JSON</button>
+              <button onClick={exportCSV} className="px-3 py-1.5 bg-slate-200 text-slate-700 text-xs rounded hover:bg-slate-300">Export CSV</button>
               <span className="text-[10px] text-slate-400 ml-auto">{base.rows.length} records - stored locally</span>
             </div>
 
@@ -156,5 +182,7 @@ export default function KaraBase() {
     </div>
   );
 }
+
+
 
 

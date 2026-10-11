@@ -160,6 +160,13 @@ function App() {
   const [sugg, setSugg] = useState(null);
   const [fontOpen, setFontOpen] = useState(false);
   const [showIntel, setShowIntel] = useState(false);
+  const editorRef = useRef(null);
+  useEffect(() => { editorRef.current = editor; if (editor) editor.view.dom.setAttribute('spellcheck', 'false'); });
+  useEffect(() => {
+    const h = (e: Event) => { const ed = (editorRef as any).current; if (ed) ed.commands.setContent((e as CustomEvent).detail); };
+    window.addEventListener('kara-word-load', h);
+    return () => window.removeEventListener('kara-word-load', h);
+  }, []);
   const [sizeOpen, setSizeOpen] = useState(false);
   const [curFont, setCurFont] = useState('Calibri');
   const [curSize, setCurSize] = useState('12pt');
@@ -871,7 +878,7 @@ function App() {
             )}
           </div>
 
-          {showIntel && (<KaraIntelligence onClose={() => setShowIntel(false)} onToWord={(t) => { setActiveApp('word'); setTimeout(() => { if (editor) editor.chain().focus('end').insertContent('<p>' + t.replace(/\n/g, '</p><p>') + '</p>').run(); }, 300); }} onToSlides={(t) => { setActiveApp('slides'); setTimeout(() => { window.dispatchEvent(new CustomEvent('kara-intel-slides', { detail: t })); }, 300); }} />)}
+          {showIntel && (<KaraIntelligence onClose={() => setShowIntel(false)} onToWord={(t) => { const html = t.split('\n').map(l => '<p>' + l + '</p>').join(''); localStorage.setItem('karaWordDoc', html); setActiveApp('word'); setTimeout(() => window.dispatchEvent(new CustomEvent('kara-word-load', { detail: html })), 400); }} onToSlides={(t) => { setActiveApp('slides'); setTimeout(() => window.dispatchEvent(new CustomEvent('kara-intel-slides', { detail: t })), 400); }} />)}
           {activeApp !== 'dashboard' && aiMode !== 'off' && (
             <div className="w-80 bg-white border-l border-slate-200 flex flex-col shadow-lg flex-shrink-0 z-10">
               <div className="p-4 border-b border-slate-200 bg-slate-50">
@@ -908,6 +915,7 @@ function App() {
   );
 }
 export default App;
+
 
 
 

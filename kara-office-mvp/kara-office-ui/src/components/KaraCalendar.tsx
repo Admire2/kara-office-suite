@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Download, Upload } from 'lucide-react';
 
 type Ev = { id: string; title: string; date: string; time: string; source?: string };
 const KEY = 'karaCalendarEvents';
@@ -22,6 +22,9 @@ export default function KaraCalendar() {
   const days = new Date(y, m + 1, 0).getDate();
   const cells: (number | null)[] = [...Array(offset).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
   const dayEvents = events.filter(e => e.date === sel).sort((a, b) => a.time.localeCompare(b.time));
+  const exportEvents = () => { const blob = new Blob([JSON.stringify(events, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'kara-calendar-' + Date.now() + '.json'; a.click(); };
+  const importEvents = (f: File) => { f.text().then(t => { try { const arr = JSON.parse(t); if (Array.isArray(arr) && arr.every((x: any) => x && x.title && x.date)) { setEvents(prev => [...arr.map((x: any, i: number) => ({ id: String(x.id || Date.now() + i), title: String(x.title), date: String(x.date), time: String(x.time || '09:00'), source: x.source || 'import' })), ...prev]); alert('Imported ' + arr.length + ' events.'); } else { alert('JSON must be a Kara Calendar export.'); } } catch (e) { alert('Import failed: ' + (e as any).message); } }); };
+
   const addEvent = () => { if (!form.title) return; setEvents(ev => [{ id: Date.now().toString(36), title: form.title, date: sel, time: form.time, source: 'Kara Calendar' }, ...ev]); setForm({ title: '', time: '09:00' }); };
 
   return (
@@ -63,6 +66,8 @@ export default function KaraCalendar() {
           <div className="flex gap-2">
             <input type="time" value={form.time} onChange={e => setForm(p => ({ ...p, time: e.target.value }))} className="border border-slate-200 rounded text-xs py-1.5 px-2"/>
             <button onClick={addEvent} className="flex-1 flex items-center justify-center gap-1 bg-amber-600 text-white text-xs rounded hover:bg-amber-700"><Plus size={12}/> Add</button>
+            <button onClick={exportEvents} title="Export events" className="px-2 py-1.5 bg-slate-200 text-slate-700 text-xs rounded hover:bg-slate-300"><Download size={12} /></button>
+            <label title="Import events" className="px-2 py-1.5 bg-slate-600 text-white text-xs rounded hover:bg-slate-500 cursor-pointer"><Upload size={12} /><input type="file" accept=".json" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) importEvents(f); e.target.value = ''; }} /></label>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -82,3 +87,4 @@ export default function KaraCalendar() {
     </div>
   );
 }
+

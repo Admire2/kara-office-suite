@@ -1,5 +1,10 @@
 ﻿import { useState, useEffect } from 'react';
-import { Plus, Copy, Trash2, ArrowUp, ArrowDown, Play, Download } from 'lucide-react';
+import { Plus, Copy, Trash2, ArrowUp, ArrowDown, Play, Download, Upload } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import mammoth from 'mammoth';
+import * as pdfjsLib from 'pdfjs-dist';
+import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
+pdfjsLib.GlobalWorkerOptions.workerPort = new PdfWorker();
 import { publishArtifact } from '../lib/intelligence';
 
 type Slide = { id: number; layout: string; title: string; body: string };
@@ -47,7 +52,7 @@ export default function KaraSlides({ seekReport }: { seekReport?: string }) {
   useEffect(() => {
     const h = (e: Event) => {
       const text = String((e as CustomEvent).detail || '');
-      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean).map(l => l.replace(/^#+\s*/, '').replace(/\*\*/g, ''));
       if (!lines.length) return;
       const deck: Slide[] = [{ id: Date.now(), layout: 'title', title: lines[0], body: lines.slice(1, 3).join(' | ') }];
       for (let i = 3; i < lines.length; i += 4) deck.push({ id: Date.now() + i, layout: 'content', title: lines[i], body: lines.slice(i + 1, i + 5).map(b => '- ' + b).join('\n') });
@@ -65,7 +70,7 @@ export default function KaraSlides({ seekReport }: { seekReport?: string }) {
   const update = (patch: Partial<Slide>) => setSlides(slides.map(s => s.id === activeId ? { ...s, ...patch } : s));
   const addSlide = () => { const id = Date.now(); setSlides([...slides, { id, layout: 'content', title: 'New Slide', body: '- Point one\n- Point two' }]); setActiveId(id); };
   const dupSlide = () => { if (!active) return; const id = Date.now(); const arr = [...slides]; arr.splice(activeIdx + 1, 0, { ...active, id }); setSlides(arr); setActiveId(id); };
-  const delSlide = () => { if (slides.length <= 1) return; const arr = slides.filter(s => s.id !== activeId); setSlides(arr); setActiveId(arr[Math.max(0, activeIdx - 1)].id); };
+  const delSlide = () => { if (slides.length === 0) return; if (slides.length === 1) { setSlides([]); setActiveId(null as any); return; } const arr = slides.filter(s => s.id !== activeId); setSlides(arr); setActiveId(arr[Math.max(0, activeIdx - 1)].id); };
   const move = (dir: number) => { const j = activeIdx + dir; if (j < 0 || j >= slides.length) return; const arr = [...slides]; const t = arr[activeIdx]; arr[activeIdx] = arr[j]; arr[j] = t; setSlides(arr); };
 
   useEffect(() => {
@@ -139,6 +144,59 @@ export default function KaraSlides({ seekReport }: { seekReport?: string }) {
     setDeckThinking(false); setDeckPhase('');
   };
 
+  const exportJSON = () => { const blob = new Blob([JSON.stringify(slides, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (slides[0]?.title || 'KaraDeck').replace(/[^a-z0-9]/gi, '_') + '.karaSlides.json'; a.click(); };
+  const pdfPages = async (buf: ArrayBuffer) => {
+    const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+    const pages: string[] = [];
+    for (let p = 1; p <= doc.numPages; p++) {
+      const page = await doc.getPage(p);
+      const tc = await page.getTextContent();
+      pages.push(tc.items.map((it: any) => it.str).join(' '));
+    }
+    return pages;
+  };
+
+  const buildFromText = (text: string, name: string) => {
+    const base = Date.now();
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => l.replace(/^#+\s*/, '').replace(/\*\*/g, ''));
+    if (!lines.length) { alert('No readable text found in ' + name); return; }
+    const deck: Slide[] = [{ id: base, layout: 'title', title: lines[0] || name, body: lines.slice(1, 3).join(' | ') }];
+    for (let i = 3; i < lines.length; i += 4) deck.push({ id: base + i, layout: 'content', title: lines[i], body: lines.slice(i + 1, i + 5).map(b => '- ' + b).join('\n') });
+    setSlides(deck); setActiveId(base);
+    alert('Deck built from ' + name + ': ' + deck.length + ' slides.');
+  };
+
+  const importDeck = (f: File) => {
+    const base = Date.now();
+    if (f.name.endsWith('.json')) {
+      f.text().then(t => { try { const arr = JSON.parse(t); if (Array.isArray(arr) && arr.length && typeof arr[0].title === 'string') { setSlides(arr.map((s: any, i: number) => ({ id: base + i, layout: s.layout || 'content', title: String(s.title || ''), body: String(s.body || '') }))); setActiveId(base); alert('Deck imported: ' + arr.length + ' slides.'); } else { alert('JSON must be a Kara Slides deck export.'); } } catch (e) { alert('Import failed: ' + (e as any).message); } });
+    } else if (f.name.endsWith('.docx')) {
+      f.arrayBuffer().then(buf => mammoth.extractRawText({ arrayBuffer: buf }).then(res => buildFromText(res.value || '', f.name)).catch(e => alert('DOCX failed: ' + (e as any).message)));
+    } else if (f.name.endsWith('.pdf')) {
+      f.arrayBuffer().then(buf => pdfPages(buf).then(pages => {
+        const deck: Slide[] = pages.map((t, i) => ({ id: base + i, layout: i === 0 ? 'title' : 'content', title: f.name.replace(/\.[^.]+$/, '') + ' - Page ' + (i + 1), body: t.slice(0, 900) || '(no extractable text - scanned page?)' }));
+        if (!deck.length) { alert('PDF has no pages.'); return; }
+        setSlides(deck); setActiveId(base);
+        alert('PDF imported: ' + deck.length + ' slides (one per page).');
+      }).catch(e => alert('PDF failed: ' + (e as any).message)));
+    } else {
+      f.text().then(t => buildFromText(t, f.name));
+    }
+  };
+  const exportPDF = () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const t = THEMES[themeIdx];
+    slides.forEach((s, i) => {
+      if (i > 0) doc.addPage();
+      doc.setFillColor(t.bg); doc.rect(0, 0, 210, 297, 'F');
+      doc.setTextColor(t.accent); doc.setFontSize(24); doc.setFont('helvetica', 'bold');
+      doc.text(s.title || '', 15, 30, { maxWidth: 180 });
+      doc.setTextColor(t.fg); doc.setFontSize(12); doc.setFont('helvetica', 'normal');
+      doc.text(s.body || '', 15, 45, { maxWidth: 180 });
+    });
+    doc.save((slides[0]?.title || 'KaraDeck').replace(/[^a-z0-9]/gi, '_') + '.pdf');
+  };
+
   const exportHTML = () => {
     const t = theme;
     const slideDivs = slides.map(s => {
@@ -186,6 +244,9 @@ export default function KaraSlides({ seekReport }: { seekReport?: string }) {
           <button onClick={() => { setPresentIdx(activeIdx >= 0 ? activeIdx : 0); setPresenting(true); }} className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"><Play size={12}/> Present</button>
           <button onClick={() => { publishArtifact('slides', slides[0]?.title || 'Kara Deck', slides.map(s => s.title + '\n' + s.body).join('\n')); alert('Deck published to Kara Intelligence.'); }} className="px-3 py-1.5 bg-slate-800 text-white text-xs rounded hover:bg-slate-700">Publish</button>
           <button onClick={exportHTML} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700"><Download size={12}/> Export HTML</button>
+          <button onClick={exportPDF} className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700"><Download size={12}/> Export PDF</button>
+          <button onClick={exportJSON} className="flex items-center gap-1 px-3 py-1.5 bg-slate-600 text-white text-xs rounded hover:bg-slate-500"><Download size={12}/> Export JSON</button>
+          <label className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 text-white text-xs rounded hover:bg-slate-700 cursor-pointer"><Upload size={12}/> Import<input type="file" accept=".json,.txt,.md,.docx,.pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) importDeck(f); e.target.value = ''; }} /></label>
           <div className="flex gap-1 flex-wrap w-full">
             {DECK_CHIPS.map((ch, i) => (
               <button key={i} onClick={() => setDeckPrompt(ch)} className="px-2 py-1 bg-white border border-indigo-200 text-indigo-600 text-[10px] rounded hover:bg-indigo-50">{ch.split(':')[0]}...</button>
@@ -227,5 +288,10 @@ export default function KaraSlides({ seekReport }: { seekReport?: string }) {
     </div>
   );
 }
+
+
+
+
+
 
 

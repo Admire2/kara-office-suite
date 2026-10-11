@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
-import { getArtifacts, publishArtifact, Artifact } from '../lib/intelligence';
+import { getArtifacts, publishArtifact } from '../lib/intelligence';
+import type { Artifact } from '../lib/intelligence';
 
 export default function KaraIntelligence({ onClose, onToWord, onToSlides }: { onClose: () => void; onToWord: (t: string) => void; onToSlides: (t: string) => void }) {
   const [items, setItems] = useState<Artifact[]>([]);
@@ -12,6 +13,12 @@ export default function KaraIntelligence({ onClose, onToWord, onToSlides }: { on
     window.addEventListener('kara-intel-updated', refresh);
     return () => window.removeEventListener('kara-intel-updated', refresh);
   }, []);
+
+  const downloadArtifact = (it: Artifact) => {
+    const blob = new Blob([it.text], { type: 'text/plain' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = it.title.replace(/[^a-z0-9]/gi, '_') + '.txt'; a.click();
+  };
 
   const combined = async () => {
     const chosen = items.filter(i => sel[i.id]);
@@ -50,6 +57,7 @@ export default function KaraIntelligence({ onClose, onToWord, onToSlides }: { on
             <div className="flex gap-1 mt-2">
               <button onClick={() => onToWord(it.text)} className="px-2 py-1 bg-blue-600 text-white text-[10px] rounded">To Word</button>
               <button onClick={() => onToSlides(it.text)} className="px-2 py-1 bg-orange-600 text-white text-[10px] rounded">To Slides</button>
+              <button onClick={() => downloadArtifact(it)} className="px-2 py-1 bg-slate-600 text-white text-[10px] rounded">Download</button>
             </div>
           </div>
         ))}
@@ -61,3 +69,7 @@ export default function KaraIntelligence({ onClose, onToWord, onToSlides }: { on
     </div>
   );
 }
+
+
+
+
