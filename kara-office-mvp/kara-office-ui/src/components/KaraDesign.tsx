@@ -1,12 +1,13 @@
 ﻿import { useState, useRef, useEffect } from 'react';
-import { Square, Circle, Type, Download, Trash2, ArrowUp, ArrowDown, Sparkles, Loader2 } from 'lucide-react';
+import { Square, Circle, Type, Download, Trash2, ArrowUp, ArrowDown, Sparkles, Loader2, Image as ImageIcon, AlignCenterHorizontal, AlignCenterVertical, LayoutTemplate } from 'lucide-react';
 
-type Shape = { id: string; type: 'rect' | 'circle' | 'text'; x: number; y: number; w: number; h: number; text?: string; color: string };
+type Shape = { id: string; type: 'rect' | 'circle' | 'text' | 'image'; x: number; y: number; w: number; h: number; text?: string; color: string; src?: string; fontSize?: number };
 
 export default function KaraDesign() {
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tool, setTool] = useState<'rect' | 'circle' | 'text'>('rect');
+  const [canvasBg, setCanvasBg] = useState('#ffffff');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiThinking, setAiThinking] = useState(false);
   
@@ -18,11 +19,13 @@ export default function KaraDesign() {
 
   const selectedShape = shapes.find(s => s.id === selectedId);
 
-  const addShape = () => {
+  const addShape = (override?: Partial<Shape>) => {
     if (!canvasRef.current) return;
     const newShape: Shape = {
-      id: Date.now().toString(36), type: tool, x: 50, y: 50, w: 120, h: tool === 'text' ? 40 : 120,
-      text: tool === 'text' ? 'Double click to edit' : undefined, color: tool === 'text' ? '#0f172a' : '#6366f1'
+      id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5), 
+      type: tool, x: 50, y: 50, w: 120, h: tool === 'text' ? 40 : 120,
+      text: tool === 'text' ? 'Text' : undefined, color: tool === 'text' ? '#0f172a' : '#6366f1',
+      fontSize: 24, ...override
     };
     setShapes([...shapes, newShape]);
     setSelectedId(newShape.id);
@@ -31,23 +34,45 @@ export default function KaraDesign() {
   const updateShape = (id: string, patch: Partial<Shape>) => setShapes(shapes.map(s => s.id === id ? { ...s, ...patch } : s));
   const delShape = (id: string) => { setShapes(shapes.filter(s => s.id !== id)); setSelectedId(null); };
 
-  const bringToFront = () => {
-    if (!selectedId) return;
-    const idx = shapes.findIndex(s => s.id === selectedId);
-    if (idx < shapes.length - 1) {
-      const newShapes = [...shapes];
-      [newShapes[idx], newShapes[idx + 1]] = [newShapes[idx + 1], newShapes[idx]];
-      setShapes(newShapes);
+  // Alignment Tools
+  const centerHorizontal = () => {
+    if (!selectedId || !canvasRef.current) return;
+    const canvasWidth = canvasRef.current.clientWidth;
+    updateShape(selectedId, { x: (canvasWidth - (selectedShape?.w || 0)) / 2 });
+  };
+  const centerVertical = () => {
+    if (!selectedId || !canvasRef.current) return;
+    const canvasHeight = canvasRef.current.clientHeight;
+    updateShape(selectedId, { y: (canvasHeight - (selectedShape?.h || 0)) / 2 });
+  };
+
+  // Templates
+  const applyTemplate = (type: 'social' | 'banner' | 'logo') => {
+    setShapes([]); setSelectedId(null);
+    if (type === 'social') {
+      setCanvasBg('#f8fafc');
+      addShape({ type: 'rect', x: 50, y: 50, w: 300, h: 300, color: '#3b82f6' });
+      addShape({ type: 'text', x: 100, y: 150, w: 200, h: 50, text: 'Social Post', color: '#ffffff', fontSize: 32 });
+    } else if (type === 'banner') {
+      setCanvasBg('#ffffff');
+      addShape({ type: 'rect', x: 0, y: 0, w: 800, h: 200, color: '#1e293b' });
+      addShape({ type: 'text', x: 50, y: 70, w: 400, h: 60, text: 'Company Banner', color: '#ffffff', fontSize: 40 });
+    } else if (type === 'logo') {
+      setCanvasBg('#ffffff');
+      addShape({ type: 'circle', x: 100, y: 100, w: 150, h: 150, color: '#ef4444' });
+      addShape({ type: 'text', x: 280, y: 140, w: 200, h: 60, text: 'LOGO', color: '#0f172a', fontSize: 48 });
     }
   };
 
-  const sendToBack = () => {
-    if (!selectedId) return;
-    const idx = shapes.findIndex(s => s.id === selectedId);
-    if (idx > 0) {
-      const newShapes = [...shapes];
-      [newShapes[idx], newShapes[idx - 1]] = [newShapes[idx - 1], newShapes[idx]];
-      setShapes(newShapes);
+  // Image Upload
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        addShape({ type: 'image', x: 50, y: 50, w: 200, h: 200, color: 'transparent', src: ev.target?.result as string });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -84,7 +109,8 @@ Rules:
           w: Math.max(20, Number(s.w) || 100),
           h: Math.max(20, Number(s.h) || 100),
           color: s.color || '#6366f1',
-          text: s.type === 'text' ? (s.text || 'AI Text') : undefined
+          text: s.type === 'text' ? (s.text || 'AI Text') : undefined,
+          fontSize: 24
         }));
         setShapes(prev => [...prev, ...newShapes]);
       }
@@ -104,21 +130,26 @@ Rules:
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = canvasBg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     shapes.forEach(s => {
-      ctx.fillStyle = s.color;
       if (s.type === 'rect') {
+        ctx.fillStyle = s.color;
         ctx.fillRect(s.x, s.y, s.w, s.h);
       } else if (s.type === 'circle') {
+        ctx.fillStyle = s.color;
         ctx.beginPath();
         ctx.ellipse(s.x + s.w / 2, s.y + s.h / 2, s.w / 2, s.h / 2, 0, 0, 2 * Math.PI);
         ctx.fill();
       } else if (s.type === 'text') {
-        ctx.font = 'bold 20px sans-serif';
+        ctx.font = `bold ${s.fontSize || 24}px sans-serif`;
         ctx.fillStyle = s.color;
-        ctx.fillText(s.text || '', s.x, s.y + 20);
+        ctx.fillText(s.text || '', s.x, s.y + (s.fontSize || 24));
+      } else if (s.type === 'image' && s.src) {
+        const img = new window.Image();
+        img.src = s.src;
+        ctx.drawImage(img, s.x, s.y, s.w, s.h);
       }
     });
 
@@ -174,8 +205,8 @@ Rules:
 
   return (
     <div className="h-full flex bg-slate-50">
-      {/* Toolbar */}
-      <div className="w-64 bg-white border-r border-slate-200 flex flex-col flex-shrink-0 z-10">
+      {/* Sidebar */}
+      <div className="w-72 bg-white border-r border-slate-200 flex flex-col flex-shrink-0 z-10 overflow-y-auto">
         {/* AI Section */}
         <div className="p-3 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center gap-2 mb-2 text-xs font-bold text-slate-700">
@@ -185,8 +216,8 @@ Rules:
             value={aiPrompt} 
             onChange={e => setAiPrompt(e.target.value)} 
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generateDesign(); } }}
-            placeholder="e.g., 'A red circle with a blue square next to it and text saying Hello'"
-            className="w-full border border-slate-200 rounded p-2 text-xs resize-none h-20 focus:ring-1 focus:ring-purple-500 outline-none"
+            placeholder="e.g., 'A red circle with a blue square next to it'"
+            className="w-full border border-slate-200 rounded p-2 text-xs resize-none h-16 focus:ring-1 focus:ring-purple-500 outline-none"
           />
           <button 
             onClick={generateDesign} 
@@ -198,34 +229,66 @@ Rules:
           </button>
         </div>
 
-        {/* Tools Section */}
-        <div className="p-3 border-b border-slate-200 flex flex-col gap-2">
-          <div className="text-[10px] font-bold text-slate-400 uppercase">Tools</div>
-          <div className="flex gap-2">
-            <button onClick={() => setTool('rect')} className={`flex-1 p-2 rounded flex justify-center ${tool === 'rect' ? 'bg-indigo-100 text-indigo-600' : 'text-slate-500 hover:bg-slate-100'}`}><Square size={18}/></button>
-            <button onClick={() => setTool('circle')} className={`flex-1 p-2 rounded flex justify-center ${tool === 'circle' ? 'bg-indigo-100 text-indigo-600' : 'text-slate-500 hover:bg-slate-100'}`}><Circle size={18}/></button>
-            <button onClick={() => setTool('text')} className={`flex-1 p-2 rounded flex justify-center ${tool === 'text' ? 'bg-indigo-100 text-indigo-600' : 'text-slate-500 hover:bg-slate-100'}`}><Type size={18}/></button>
+        {/* Templates */}
+        <div className="p-3 border-b border-slate-200">
+          <div className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1"><LayoutTemplate size={12}/> Quick Templates</div>
+          <div className="flex gap-1">
+            <button onClick={() => applyTemplate('social')} className="flex-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded p-1">Social</button>
+            <button onClick={() => applyTemplate('banner')} className="flex-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded p-1">Banner</button>
+            <button onClick={() => applyTemplate('logo')} className="flex-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded p-1">Logo</button>
           </div>
-          <button onClick={addShape} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">
-            <Square size={14}/> Add {tool === 'rect' ? 'Rectangle' : tool === 'circle' ? 'Circle' : 'Text'}
-          </button>
         </div>
 
-        {/* Actions Section */}
+        {/* Tools */}
+        <div className="p-3 border-b border-slate-200">
+          <div className="text-[10px] font-bold text-slate-400 uppercase mb-2">Add Elements</div>
+          <div className="grid grid-cols-4 gap-2 mb-2">
+            <button onClick={() => { setTool('rect'); addShape(); }} className="p-2 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 flex justify-center"><Square size={18}/></button>
+            <button onClick={() => { setTool('circle'); addShape(); }} className="p-2 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 flex justify-center"><Circle size={18}/></button>
+            <button onClick={() => { setTool('text'); addShape(); }} className="p-2 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 flex justify-center"><Type size={18}/></button>
+            <label className="p-2 bg-emerald-50 text-emerald-600 rounded hover:bg-emerald-100 flex justify-center cursor-pointer">
+              <ImageIcon size={18}/>
+              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            </label>
+          </div>
+        </div>
+
+        {/* Selected Shape Properties */}
         {selectedShape && (
-          <div className="p-3 border-b border-slate-200 flex flex-col gap-2">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Selected Shape</div>
+          <div className="p-3 border-b border-slate-200 flex flex-col gap-3">
+            <div className="text-[10px] font-bold text-slate-400 uppercase">Properties</div>
+            
             <div className="flex items-center gap-2">
-              <label className="text-xs text-slate-600">Color:</label>
-              <input type="color" value={selectedShape.color} onChange={e => updateShape(selectedShape.id, { color: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+              <label className="text-xs text-slate-600 w-12">Color:</label>
+              <input type="color" value={selectedShape.color === 'transparent' ? '#ffffff' : selectedShape.color} onChange={e => updateShape(selectedShape.id, { color: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
             </div>
+
+            {selectedShape.type === 'text' && (
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-slate-600 w-12">Size:</label>
+                <input type="range" min="12" max="72" value={selectedShape.fontSize || 24} onChange={e => updateShape(selectedShape.id, { fontSize: Number(e.target.value) })} className="flex-1" />
+                <span className="text-xs w-6">{selectedShape.fontSize}</span>
+              </div>
+            )}
+
             <div className="flex gap-1">
-              <button onClick={bringToFront} className="flex-1 p-1.5 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 flex justify-center" title="Bring to Front"><ArrowUp size={14}/></button>
-              <button onClick={sendToBack} className="flex-1 p-1.5 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 flex justify-center" title="Send to Back"><ArrowDown size={14}/></button>
-              <button onClick={delShape} className="flex-1 p-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 flex justify-center" title="Delete"><Trash2 size={14}/></button>
+              <button onClick={centerHorizontal} className="flex-1 p-1.5 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 flex justify-center" title="Center Horizontally"><AlignCenterHorizontal size={14}/></button>
+              <button onClick={centerVertical} className="flex-1 p-1.5 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 flex justify-center" title="Center Vertically"><AlignCenterVertical size={14}/></button>
+              <button onClick={() => { const idx = shapes.findIndex(s => s.id === selectedId); if (idx < shapes.length - 1) { const n = [...shapes]; [n[idx], n[idx+1]] = [n[idx+1], n[idx]]; setShapes(n); } }} className="flex-1 p-1.5 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 flex justify-center"><ArrowUp size={14}/></button>
+              <button onClick={() => { const idx = shapes.findIndex(s => s.id === selectedId); if (idx > 0) { const n = [...shapes]; [n[idx], n[idx-1]] = [n[idx-1], n[idx]]; setShapes(n); } }} className="flex-1 p-1.5 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 flex justify-center"><ArrowDown size={14}/></button>
+              <button onClick={delShape} className="flex-1 p-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 flex justify-center"><Trash2 size={14}/></button>
             </div>
           </div>
         )}
+
+        {/* Canvas Background */}
+        <div className="p-3 border-b border-slate-200">
+          <div className="text-[10px] font-bold text-slate-400 uppercase mb-2">Canvas Background</div>
+          <div className="flex items-center gap-2">
+            <input type="color" value={canvasBg} onChange={e => setCanvasBg(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+            <span className="text-xs text-slate-600">{canvasBg}</span>
+          </div>
+        </div>
 
         <div className="flex-1"></div>
         
@@ -238,8 +301,8 @@ Rules:
       </div>
 
       {/* Canvas */}
-      <div ref={canvasRef} className="flex-1 relative bg-white m-4 rounded shadow-sm border border-slate-200 overflow-hidden" onClick={() => setSelectedId(null)}>
-        {shapes.length === 0 && <div className="absolute inset-0 flex items-center justify-center text-slate-300 text-sm pointer-events-none">Use the AI Assistant or add shapes manually</div>}
+      <div ref={canvasRef} className="flex-1 relative m-4 rounded shadow-sm border border-slate-200 overflow-hidden" style={{ backgroundColor: canvasBg }} onClick={() => setSelectedId(null)}>
+        {shapes.length === 0 && <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm pointer-events-none">Use AI, Templates, or Tools to start</div>}
         
         {shapes.map(s => (
           <div 
@@ -254,11 +317,12 @@ Rules:
               <input 
                 value={s.text} 
                 onChange={e => updateShape(s.id, { text: e.target.value })} 
-                className="w-full h-full bg-transparent border-none outline-none font-semibold pointer-events-auto"
-                style={{ color: s.color }}
+                className="w-full h-full bg-transparent border-none outline-none font-bold pointer-events-auto"
+                style={{ color: s.color, fontSize: `${s.fontSize || 24}px` }}
                 onMouseDown={(e) => e.stopPropagation()}
               />
             )}
+            {s.type === 'image' && s.src && <img src={s.src} className="w-full h-full object-cover pointer-events-none" alt="uploaded" />}
             
             {selectedId === s.id && (
               <div 
