@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { emitFlowEvent } from '../lib/automate';
 import { publishArtifact } from '../lib/intelligence';
 
 type Col = { id: string; name: string; type: 'text' | 'number' | 'select' | 'check'; options?: string[] };
@@ -19,7 +20,7 @@ export default function KaraBase() {
 
   const addBase = () => { const b: Base = { id: Date.now().toString(36), name: 'Base ' + (bases.length + 1), cols: [{ id: 'c1', name: 'Name', type: 'text' }, { id: 'c2', name: 'Status', type: 'select', options: ['Todo', 'Doing', 'Done'] }], rows: [] }; setBases([b, ...bases]); setActiveId(b.id); };
   const addCol = () => { const nm = newCol.name.trim() || ('Column ' + ((base?.cols.length || 0) + 1)); update(b => ({ ...b, cols: [...b.cols, { id: 'c' + Date.now().toString(36), name: nm, type: newCol.type as Col['type'], options: newCol.type === 'select' ? ['A', 'B', 'C'] : undefined }] })); setNewCol({ name: '', type: 'text' }); };
-  const addRow = () => update(b => ({ ...b, rows: [...b.rows, { id: 'r' + Date.now().toString(36), cells: {} }] }));
+  const addRow = () => { update(b => ({ ...b, rows: [...b.rows, { id: 'r' + Date.now().toString(36), cells: {} }] })); emitFlowEvent('Kara Base', 'Record Created', { base: base?.name }); };
   const setCell = (rid: string, cid: string, v: any) => update(b => ({ ...b, rows: b.rows.map(r => r.id === rid ? { ...r, cells: { ...r.cells, [cid]: v } } : r) }));
   const delRow = (rid: string) => update(b => ({ ...b, rows: b.rows.filter(r => r.id !== rid) }));
   const delBase = (id: string) => { setBases(bs => bs.filter(b => b.id !== id)); if (activeId === id) setActiveId(null); };
@@ -182,6 +183,7 @@ export default function KaraBase() {
     </div>
   );
 }
+
 
 
 

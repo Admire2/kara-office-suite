@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Trash2, Download, Upload } from 'lucide-react';
+import { emitFlowEvent } from '../lib/automate';
 
 type Ev = { id: string; title: string; date: string; time: string; source?: string };
 const KEY = 'karaCalendarEvents';
@@ -25,7 +26,7 @@ export default function KaraCalendar() {
   const exportEvents = () => { const blob = new Blob([JSON.stringify(events, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'kara-calendar-' + Date.now() + '.json'; a.click(); };
   const importEvents = (f: File) => { f.text().then(t => { try { const arr = JSON.parse(t); if (Array.isArray(arr) && arr.every((x: any) => x && x.title && x.date)) { setEvents(prev => [...arr.map((x: any, i: number) => ({ id: String(x.id || Date.now() + i), title: String(x.title), date: String(x.date), time: String(x.time || '09:00'), source: x.source || 'import' })), ...prev]); alert('Imported ' + arr.length + ' events.'); } else { alert('JSON must be a Kara Calendar export.'); } } catch (e) { alert('Import failed: ' + (e as any).message); } }); };
 
-  const addEvent = () => { if (!form.title) return; setEvents(ev => [{ id: Date.now().toString(36), title: form.title, date: sel, time: form.time, source: 'Kara Calendar' }, ...ev]); setForm({ title: '', time: '09:00' }); };
+  const addEvent = () => { if (!form.title) return; setEvents(ev => [{ id: Date.now().toString(36), title: form.title, date: sel, time: form.time, source: 'Kara Calendar' }, ...ev]); emitFlowEvent('Kara Calendar', 'Event Scheduled', { title: form.title, date: sel }); setForm({ title: '', time: '09:00' }); };
 
   return (
     <div className="flex h-full bg-slate-50">
@@ -87,4 +88,5 @@ export default function KaraCalendar() {
     </div>
   );
 }
+
 

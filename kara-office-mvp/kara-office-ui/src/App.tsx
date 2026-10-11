@@ -27,6 +27,7 @@ import KaraBase from './components/KaraBase';
 import KaraSync from './components/KaraSync';
 import KaraCalendar from './components/KaraCalendar';
 import KaraDrive from './components/KaraDrive';
+import { startConnectEngine } from './lib/connectEngine';
 import KaraDesign from './components/KaraDesign';
 import KaraConnect from './components/KaraConnect';
 import KaraFlow from './components/KaraFlow';
@@ -164,6 +165,7 @@ function App() {
   const [sugg, setSugg] = useState(null);
   const [fontOpen, setFontOpen] = useState(false);
   const [showIntel, setShowIntel] = useState(false);
+  useEffect(() => { startConnectEngine(); }, []);
   const editorRef = useRef(null);
   useEffect(() => { editorRef.current = editor; if (editor) editor.view.dom.setAttribute('spellcheck', 'false'); });
   useEffect(() => {
@@ -925,6 +927,7 @@ function App() {
   );
 }
 export default App;
+
 
 
 

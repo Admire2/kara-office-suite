@@ -7,6 +7,8 @@ const KEY = 'karaFlowTasks';
 export default function KaraFlow() {
   const [tasks, setTasks] = useState<Task[]>(() => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } });
   const [newTask, setNewTask] = useState({ title: '', assignee: '', due: '' });
+  const [overCol, setOverCol] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
 
   useEffect(() => { localStorage.setItem(KEY, JSON.stringify(tasks)); }, [tasks]);
 
@@ -15,7 +17,6 @@ export default function KaraFlow() {
     setTasks([...tasks, { id: Date.now().toString(36), ...newTask, status: 'todo' }]);
     setNewTask({ title: '', assignee: '', due: '' });
   };
-  
   const move = (id: string, s: Task['status']) => setTasks(tasks.map(t => t.id === id ? { ...t, status: s } : t));
   const del = (id: string) => setTasks(tasks.filter(t => t.id !== id));
 
@@ -35,13 +36,20 @@ export default function KaraFlow() {
       </div>
       <div className="flex-1 flex gap-4 overflow-x-auto">
         {cols.map(c => (
-          <div key={c.id} className={`flex-1 min-w-[280px] ${c.color} rounded p-3 flex flex-col`}>
+          <div key={c.id}
+            className={`flex-1 min-w-[280px] ${c.color} rounded p-3 flex flex-col transition ${overCol === c.id ? 'ring-2 ring-indigo-500' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); setOverCol(c.id); }}
+            onDragLeave={() => setOverCol(null)}
+            onDrop={(e) => { e.preventDefault(); if (dragId) move(dragId, c.id); setOverCol(null); setDragId(null); }}>
             <h3 className="font-bold text-slate-700 mb-3 flex items-center justify-between">
               {c.label} <span className="text-xs bg-slate-200 px-2 py-0.5 rounded-full">{tasks.filter(t => t.status === c.id).length}</span>
             </h3>
             <div className="flex-1 space-y-2 overflow-y-auto">
               {tasks.filter(t => t.status === c.id).map(t => (
-                <div key={t.id} className="bg-white p-3 rounded shadow-sm border border-slate-200 group">
+                <div key={t.id} draggable
+                  onDragStart={() => setDragId(t.id)}
+                  onDragEnd={() => { setDragId(null); setOverCol(null); }}
+                  className={`bg-white p-3 rounded shadow-sm border border-slate-200 group cursor-grab active:cursor-grabbing ${dragId === t.id ? 'opacity-40' : ''}`}>
                   <p className="font-semibold text-sm text-slate-800 mb-2">{t.title}</p>
                   <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                     <span className="flex items-center gap-1"><User size={12}/> {t.assignee || 'Unassigned'}</span>
