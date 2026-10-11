@@ -594,12 +594,14 @@ function App() {
     { id: 'sheets', name: 'Kara Sheets', icon: TableIcon, color: 'text-emerald-500', bg: 'bg-emerald-50', category: 'Core' },
     { id: 'slides', name: 'Kara Slides', icon: Presentation, color: 'text-orange-500', bg: 'bg-orange-50', category: 'Core' },
     { id: 'mail', name: 'Kara Mail', icon: Mail, color: 'text-blue-500', bg: 'bg-blue-50', category: 'Core' },
-    { id: 'notes', name: 'Kara Notes', icon: StickyNote, color: 'text-yellow-500', bg: 'bg-yellow-50', category: 'Core' },
-    { id: 'base', name: 'Kara Base', icon: Database, color: 'text-purple-500', bg: 'bg-purple-50', category: 'Extended' },
-    { id: 'design', name: 'Kara Design', icon: PenTool, color: 'text-pink-500', bg: 'bg-pink-50', category: 'Extended' },
-    { id: 'connect', name: 'Kara Connect', icon: Video, color: 'text-cyan-500', bg: 'bg-cyan-50', category: 'Extended' },
-    { id: 'drive', name: 'Kara Drive', icon: HardDrive, color: 'text-sky-500', bg: 'bg-sky-50', category: 'Extended' },
-    { id: 'flow', name: 'Kara Flow', icon: Kanban, color: 'text-teal-500', bg: 'bg-teal-50', category: 'Extended' },
+    { id: 'base', name: 'Kara Base', icon: Database, color: 'text-indigo-500', bg: 'bg-indigo-50', category: 'Core' },
+            { id: 'sync', name: 'Kara Sync', icon: RefreshCw, color: 'text-teal-500', bg: 'bg-teal-50', category: 'Core' },
+            { id: 'calendar', name: 'Kara Calendar', icon: CalendarDays, color: 'text-amber-500', bg: 'bg-amber-50', category: 'Core' },
+            { id: 'flow', name: 'Kara Flow', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-50', category: 'Core' },
+            { id: 'connect', name: 'Kara Connect', icon: Workflow, color: 'text-purple-500', bg: 'bg-purple-50', category: 'Core' },
+            { id: 'design', name: 'Kara Design', icon: Palette, color: 'text-pink-500', bg: 'bg-pink-50', category: 'Core' },
+            { id: 'drive', name: 'Kara Drive', icon: HardDrive, color: 'text-emerald-500', bg: 'bg-emerald-50', category: 'Core' },
+            { id: 'notes', name: 'Kara Notes', icon: StickyNote, color: 'text-yellow-500', bg: 'bg-yellow-50', category: 'Core' },
   ];
 
   const handleExecute = async () => {
@@ -923,6 +925,7 @@ function App() {
   );
 }
 export default App;
+
 
 
 
