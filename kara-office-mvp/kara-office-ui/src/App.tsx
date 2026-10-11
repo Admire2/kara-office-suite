@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
@@ -262,7 +262,7 @@ function App() {
         const before = ed.state.doc.textBetween(Math.max(0, from - 160), from, ' ');
         if (before.trim().length < 15) return;
         try {
-          const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt: `Complete the sentence naturally. Return ONLY the completing words (max 10). No quotes, no newlines.\nSentence so far: ${before}`, stream: false }) });
+          const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt: `Complete the sentence naturally. Return ONLY the completing words (max 10). No quotes, no newlines.\nSentence so far: ${before}`, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
           const data = await res.json();
           let comp = (data.response || '').replace(/[\n\r"]/g, ' ').trim();
           if (!comp || ed.state.selection.from !== from) return;
@@ -323,7 +323,7 @@ function App() {
   const splitFor = async (s) => {
     if (!editor) return;
     try {
-      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt: `The token below may be several English words glued without spaces. If so, reply exactly: split=word word word. If it is a real single word, reply exactly: split=NONE. Token: ${s.token}`, stream: false }) });
+      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt: `The token below may be several English words glued without spaces. If so, reply exactly: split=word word word. If it is a real single word, reply exactly: split=NONE. Token: ${s.token}`, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
       const data = await res.json();
       const line = (data.response || '').split('\n').find(l => l.includes('split='));
       if (!line) return;
@@ -343,7 +343,7 @@ function App() {
     const under = editor.state.doc.textBetween(s.from, s.to, ' ');
     const after = editor.state.doc.textBetween(s.to, Math.min(docSize, s.to + 150), ' ');
     try {
-      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt: `The part inside [[ ]] in the text below is wrong. Considering the words BEFORE and AFTER it, return ONLY the exact replacement string for the [[ ]] part so the whole text reads naturally. No quotes, no explanations.\n\n${before}[[${under}]]${after}`, stream: false }) });
+      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt: `The part inside [[ ]] in the text below is wrong. Considering the words BEFORE and AFTER it, return ONLY the exact replacement string for the [[ ]] part so the whole text reads naturally. No quotes, no explanations.\n\n${before}[[${under}]]${after}`, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
       const data = await res.json();
       const phrase = sane(data.response);
       if (phrase) setSugg(prev => (prev && prev.from === s.from ? { ...prev, aiFix: phrase } : prev));
@@ -363,7 +363,7 @@ function App() {
     const sentTo = end === -1 ? Math.min(size, s.to + 300) : s.to + end + 1;
     const sentence = editor.state.doc.textBetween(sentFrom, sentTo, ' ');
     try {
-      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt: `Rewrite this sentence so it is grammatically correct and natural. Keep the same meaning and names. Return ONLY the rewritten sentence.\n\n${sentence}`, stream: false }) });
+      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt: `Rewrite this sentence so it is grammatically correct and natural. Keep the same meaning and names. Return ONLY the rewritten sentence.\n\n${sentence}`, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
       const data = await res.json();
       const fixed = sane(data.response);
       if (fixed) setSugg(prev => (prev && prev.from === s.from ? { ...prev, sentFix: fixed, sentFrom: sentFrom, sentTo: sentTo } : prev));
@@ -445,7 +445,7 @@ function App() {
     if (from === to) { alert('Select the text you want Kara to correct first.'); return; }
     const sel = editor.state.doc.textBetween(from, to, ' ');
     try {
-      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt: `Correct grammar and spelling only. Keep the meaning identical. Return ONLY the corrected text.\n\n${sel}`, stream: false }) });
+      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt: `Correct grammar and spelling only. Keep the meaning identical. Return ONLY the corrected text.\n\n${sel}`, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
       const data = await res.json();
       editor.chain().focus().insertContent(data.response.trim()).run();
     } catch (e) { alert('Kara Local engine offline.'); }
@@ -459,7 +459,7 @@ function App() {
     if (!lang) return;
     const sel = editor.state.doc.textBetween(from, to, ' ');
     try {
-      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt: `Translate the following text into ${lang}. Return ONLY the translation, nothing else.\n\n${sel}`, stream: false }) });
+      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt: `Translate the following text into ${lang}. Return ONLY the translation, nothing else.\n\n${sel}`, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
       const data = await res.json();
       editor.chain().focus().insertContent(data.response.trim()).run();
     } catch (e) { alert('Kara Local engine offline.'); }
@@ -616,10 +616,10 @@ function App() {
         const data = await response.json();
         if (data.success) { setAgentLogs(data.logs); setAiResponse(data.answer); publishArtifact('seek', promptToSend, data.answer); } else setAiResponse('Agent failed.');
       } else if (aiMode === 'cloud') {
-        const response = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt: `You are Kara Cloud, a fast smart cloud AI. Year 2026. User: ${promptToSend}`, stream: false }) });
+        const response = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt: `You are Kara Cloud, a fast smart cloud AI. Year 2026. User: ${promptToSend}`, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
         const data = await response.json(); setAiResponse(data.response); publishArtifact('seek', promptToSend, data.response);
       } else if (aiMode === 'local') {
-        const response = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt: `Offline text assistant. Task: ${promptToSend}`, stream: false }) });
+        const response = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt: `Offline text assistant. Task: ${promptToSend}`, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
         const data = await response.json(); setAiResponse(data.response); publishArtifact('seek', promptToSend, data.response);
       }
     } catch (e) { setAiResponse('⚠️ Engine error.'); setPrompt(promptToSend); }

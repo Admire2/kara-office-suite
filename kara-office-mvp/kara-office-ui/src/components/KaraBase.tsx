@@ -68,6 +68,15 @@ export default function KaraBase() {
     });
   };
 
+  const sendToFlow = () => {
+    if (!base) return;
+    const textCol = base.cols.find(c => c.type === 'text');
+    const tasks = base.rows.map(r => ({ id: 'bf' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title: String(r.cells[textCol ? textCol.id : ''] || 'Base task'), assignee: 'Kara Base', status: 'todo', due: '' }));
+    try { const cur = JSON.parse(localStorage.getItem('karaFlowTasks') || '[]'); localStorage.setItem('karaFlowTasks', JSON.stringify([...tasks, ...cur])); } catch (e) {}
+    window.dispatchEvent(new CustomEvent('kara-navigate', { detail: { app: 'flow' } }));
+    alert(tasks.length + ' tasks sent to Kara Flow.');
+  };
+
   const publishBase = () => {
     if (!base) return;
     const lines = [base.cols.map(c => c.name).join(',')].concat(base.rows.map(r => base.cols.map(c => String(r.cells[c.id] ?? '')).join(',')));
@@ -81,7 +90,7 @@ export default function KaraBase() {
     setBriefing(true);
     const summaryRows = base.rows.map(r => base.cols.map(c => c.name + ': ' + String(r.cells[c.id] ?? '-')).join(' | ')).join('\n');
     try {
-      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt: 'Summarize this project database into a 5-bullet executive brief including total budget and top risks:\n' + summaryRows, stream: false }) });
+      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt: 'Summarize this project database into a 5-bullet executive brief including total budget and top risks:\n' + summaryRows, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
       const d = await res.json();
       publishArtifact('base', base.name + ' (AI brief)', d.response || '');
       alert('AI brief published to Kara Intelligence.');
@@ -130,6 +139,7 @@ export default function KaraBase() {
               <label className="px-3 py-1.5 bg-slate-600 text-white text-xs rounded hover:bg-slate-500 cursor-pointer">Import<input type="file" accept=".json,.csv" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ''; }} /></label>
               <button onClick={exportJSON} className="px-3 py-1.5 bg-slate-200 text-slate-700 text-xs rounded hover:bg-slate-300">Export JSON</button>
               <button onClick={exportCSV} className="px-3 py-1.5 bg-slate-200 text-slate-700 text-xs rounded hover:bg-slate-300">Export CSV</button>
+              <button onClick={sendToFlow} className="px-3 py-1.5 bg-amber-600 text-white text-xs rounded hover:bg-amber-700">Send to Flow</button>
               <span className="text-[10px] text-slate-400 ml-auto">{base.rows.length} records - stored locally</span>
             </div>
 
@@ -183,6 +193,7 @@ export default function KaraBase() {
     </div>
   );
 }
+
 
 
 

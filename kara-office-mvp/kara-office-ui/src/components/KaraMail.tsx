@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Send, Inbox, PenTool, Trash2, Star, Archive, Bot, CheckCircle, AlertCircle, ArrowLeft, Reply, CalendarDays } from 'lucide-react';
 
 type Email = { 
@@ -46,9 +46,9 @@ export default function KaraMail() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'qwen2.5:3b',
+          model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b',
           prompt: `You are a professional email assistant. Draft a concise, polite email body based on this request: "${aiPrompt}". The email is to: ${composeData.to}, subject: ${composeData.subject}. Return ONLY the email body text, no greeting or signature.`,
-          stream: false
+          stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7
         })
       });
       const d = await res.json();
@@ -71,9 +71,9 @@ export default function KaraMail() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'qwen2.5:3b',
+          model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b',
           prompt: `You are replying to this email:\n\nFrom: ${selectedEmail.from}\nSubject: ${selectedEmail.subject}\nBody:\n${selectedEmail.body}\n\nUser instruction: ${replyPrompt}\n\nDraft a professional reply. Return ONLY the reply body, no greeting.`,
-          stream: false
+          stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7
         })
       });
       const d = await res.json();

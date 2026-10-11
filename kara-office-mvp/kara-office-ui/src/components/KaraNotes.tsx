@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, FileText, Bot, FileDown, ChevronLeft, MoreVertical, Trash2, Upload } from 'lucide-react';
 
 type Note = {
@@ -98,9 +98,9 @@ export default function KaraNotes() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'qwen2.5:3b',
+          model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b',
           prompt: `You are Kara Notes AI. Summarize the following note and extract key action items. Format clearly with bullet points.\n\nNote:\n${activeNote.content}`,
-          stream: false
+          stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7
         })
       });
       const d = await res.json();

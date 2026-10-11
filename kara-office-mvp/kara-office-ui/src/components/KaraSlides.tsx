@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Copy, Trash2, ArrowUp, ArrowDown, Play, Download, Upload } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import mammoth from 'mammoth';
@@ -101,7 +101,7 @@ export default function KaraSlides({ seekReport }: { seekReport?: string }) {
       'Create a presentation about: ' + topic +
       '\nReturn ONLY lines in this exact format:\nSLIDE: <slide title>\nBODY: <bullet one> | <bullet two> | <bullet three>\nMake exactly 6 slides. No extra text.';
     try {
-      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt, stream: false }) });
+      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
       const d = await res.json();
       const lines = (d.response || '').split('\n');
       const deck: Slide[] = [];
@@ -128,7 +128,7 @@ export default function KaraSlides({ seekReport }: { seekReport?: string }) {
     setDeckThinking(true); setDeckPhase('build');
     const prompt = 'You are Kara Slides Deck Builder. Use ONLY the research report below as your factual source.\n\nRESEARCH REPORT:\n' + report.substring(0, 4000) + '\n\nCreate a presentation about: ' + topic + '\nReturn ONLY lines in this exact format:\nSLIDE: <slide title>\nBODY: <bullet one> | <bullet two> | <bullet three>\nMake exactly 6 slides. No extra text.';
     try {
-      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt, stream: false }) });
+      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
       const d = await res.json();
       const lines = (d.response || '').split('\n');
       const deck: Slide[] = [];

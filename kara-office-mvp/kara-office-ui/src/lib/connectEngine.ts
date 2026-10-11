@@ -1,6 +1,6 @@
 ﻿import { publishArtifact } from './intelligence';
 
-type Rule = { id: string; triggerApp: string; triggerEvent: string; actionApp: string; actionType: string; active: boolean };
+type Rule = { id: string; triggerApp: string; triggerEvent: string; actionApp: string; actionType: string; active: boolean; condition?: string; schedule?: string };
 const RULES_KEY = 'karaConnectRules';
 const LOG_KEY = 'karaConnectLog';
 
@@ -9,11 +9,12 @@ const log = (msg: string) => {
   try {
     const l = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
     l.unshift({ ts: Date.now(), msg });
-    localStorage.setItem(LOG_KEY, JSON.stringify(l.slice(0, 30)));
+    localStorage.setItem(LOG_KEY, JSON.stringify(l.slice(0, 40)));
     window.dispatchEvent(new CustomEvent('kara-connect-log'));
   } catch (e) {}
 };
 const today = () => new Date().toISOString().slice(0, 10);
+const matches = (r: Rule, detail: any) => !r.condition || JSON.stringify(detail || {}).toLowerCase().includes(r.condition.toLowerCase());
 
 const runAction = (rule: Rule, detail: any) => {
   const title = (detail && detail.title) || 'Automation item';
@@ -50,13 +51,29 @@ const triggerMap: Record<string, string> = {
   'Kara Base|Record Created': 'kara-base-record',
   'Kara Calendar|Event Scheduled': 'kara-calendar-event',
   'Kara Intelligence|Artifact Published': 'kara-intel-updated',
+  'Kara Flow|Task Completed': 'kara-flow-task-done',
+  'Kara Design|Design Exported': 'kara-design-export',
 };
 
 export function startConnectEngine() {
+  if ((window as any).__karaEngineStarted) return;
+  (window as any).__karaEngineStarted = true;
+
   Object.entries(triggerMap).forEach(([key, evt]) => {
     window.addEventListener(evt, (e: Event) => {
       const detail = (e as CustomEvent).detail || {};
-      readRules().filter(r => r.active && (r.triggerApp + '|' + r.triggerEvent) === key).forEach(r => runAction(r, detail));
+      readRules().filter(r => r.active && (r.triggerApp + '|' + r.triggerEvent) === key && matches(r, detail)).forEach(r => runAction(r, detail));
     });
   });
+
+  setInterval(() => {
+    const day = new Date().toDateString();
+    const last = localStorage.getItem('karaConnectLastDaily');
+    if (last === day) return;
+    const daily = readRules().filter(r => r.active && r.schedule === 'daily');
+    if (daily.length) {
+      daily.forEach(r => runAction(r, { title: 'Daily run ' + day }));
+      localStorage.setItem('karaConnectLastDaily', day);
+    }
+  }, 60000);
 }

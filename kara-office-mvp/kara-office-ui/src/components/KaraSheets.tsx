@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { evaluate } from 'mathjs';
 import { Download, Bot, HelpCircle, TrendingUp, Activity } from 'lucide-react';
 import { publishArtifact } from '../lib/intelligence';
@@ -414,7 +414,7 @@ CRITICAL: For options, Call Price and Put Price are separate valuations - do NOT
 Be precise with numbers. Reference actual cell values.`;
     try {
       console.log('[KaraSheets] Trade Analyzer calling AI with', rows.length, 'rows');
-      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt, stream: false }) });
+      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
       const d = await res.json();
       console.log('[KaraSheets] Trade Analyzer response:', d);
       setTradeSuggestions((d.response || 'No analysis returned.').trim());
@@ -427,7 +427,7 @@ Be precise with numbers. Reference actual cell values.`;
     if (!rows.length) { alert('Sheet is empty.'); return; }
     setAiThinking(true); setAiResult(' ');
     try {
-      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen2.5:3b', prompt: 'You are Kara Seek. Analyze this spreadsheet data: state totals, patterns, and give one business recommendation.\n\nCSV:\n' + rows.join('\n'), stream: false }) });
+      const res = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt: 'You are Kara Seek. Analyze this spreadsheet data: state totals, patterns, and give one business recommendation.\n\nCSV:\n' + rows.join('\n'), stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
       const d = await res.json();
       setAiResult((d.response || 'No analysis.').trim());
     } catch (e) { setAiResult('Engine offline.'); }
