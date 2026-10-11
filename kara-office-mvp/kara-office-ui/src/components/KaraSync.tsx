@@ -6,28 +6,23 @@ export default function KaraSync() {
   const [log, setLog] = useState<string[]>([]);
 
   useEffect(() => {
-    // Real-time local mesh via BroadcastChannel
     const mesh = new BroadcastChannel('kara_sovereign_mesh');
     mesh.onmessage = (e) => {
       if (e.data.type === 'SYNC_PULSE') {
         setPeers(p => p + 1);
-        setLog(l => [[Mesh] Received pulse from peer, ...l].slice(0, 10));
-        // Apply incoming state
+        setLog(l => [`[Mesh] Received pulse from peer`, ...l].slice(0, 10));
         if (e.data.state) {
           Object.entries(e.data.state).forEach(([k, v]) => localStorage.setItem(k, v as string));
           window.location.reload();
         }
       }
     };
-    
-    // Emit pulse
     const pulse = () => {
       mesh.postMessage({ type: 'SYNC_PULSE', ts: Date.now() });
-      setLog(l => [[Mesh] Emitted pulse, ...l].slice(0, 10));
+      setLog(l => [`[Mesh] Emitted pulse`, ...l].slice(0, 10));
     };
     const interval = setInterval(pulse, 5000);
     pulse();
-
     return () => { clearInterval(interval); mesh.close(); };
   }, []);
 
@@ -56,7 +51,6 @@ export default function KaraSync() {
     <div className="h-full flex flex-col bg-slate-50 p-8">
       <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-3 mb-2"><RefreshCw className="text-teal-500"/> Kara Sync <span className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded">P2P MESH V2</span></h2>
       <p className="text-slate-500 mb-6">Real-time local network synchronization. Zero cloud servers.</p>
-
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
@@ -74,7 +68,6 @@ export default function KaraSync() {
           </label>
         </div>
       </div>
-
       <div className="bg-slate-900 text-emerald-400 p-4 rounded-lg font-mono text-xs flex-1 overflow-y-auto">
         <p className="text-slate-500 mb-2">--- MESH TELEMETRY ---</p>
         {log.map((l, i) => <p key={i}>{new Date().toLocaleTimeString()} | {l}</p>)}
