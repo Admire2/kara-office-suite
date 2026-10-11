@@ -19,13 +19,17 @@ import Placeholder from '@tiptap/extension-placeholder';
 import KaraSheets from './components/KaraSheets';
 import KaraPDF from './components/KaraPDF';
 import { comparisonHTML } from './comparison';
-import { FileText, Table as TableIcon, Presentation, FileBadge, Mail, StickyNote, Database, PenTool, Video, HardDrive, Kanban, Sparkles, Shield, Bot, Send, Loader2, LayoutDashboard, Plus, Terminal, Power, Save, FolderOpen, Search , RefreshCw, CalendarDays } from 'lucide-react';
+import { FileText, Table as TableIcon, Presentation, FileBadge, Mail, StickyNote, Database, PenTool, Video, HardDrive, Kanban, Sparkles, Shield, Bot, Send, Loader2, LayoutDashboard, Plus, Terminal, Power, Save, FolderOpen, Search, RefreshCw, CalendarDays, Zap, Palette, Workflow } from 'lucide-react';
 import KaraSlides from './components/KaraSlides';
 import KaraMail from './components/KaraMail';
 import KaraNotes from './components/KaraNotes';
 import KaraBase from './components/KaraBase';
 import KaraSync from './components/KaraSync';
 import KaraCalendar from './components/KaraCalendar';
+import KaraDrive from './components/KaraDrive';
+import KaraDesign from './components/KaraDesign';
+import KaraConnect from './components/KaraConnect';
+import KaraFlow from './components/KaraFlow';
 import KaraIntelligence from './components/KaraIntelligence';
 import { publishArtifact } from './lib/intelligence';
 
@@ -840,6 +844,10 @@ function App() {
             {activeApp === 'base' && <KaraBase />}
             {activeApp === 'sync' && <KaraSync />}
             {activeApp === 'calendar' && <KaraCalendar />}
+            {activeApp === 'drive' && <KaraDrive />}
+            {activeApp === 'design' && <KaraDesign />}
+            {activeApp === 'connect' && <KaraConnect />}
+            {activeApp === 'flow' && <KaraFlow />}
 
             {false && (
               <div className="flex w-full h-full bg-white">
@@ -869,7 +877,7 @@ function App() {
 
             {activeApp === 'sheets' && <KaraSheets />}
             {activeApp === 'slides' && <KaraSlides seekReport={aiResponse} />}
-            {!['dashboard', 'word', 'notes', 'sheets', 'slides', 'pdf', 'mail', 'base', 'sync', 'calendar'].includes(activeApp) && (
+            {!['dashboard', 'word', 'notes', 'sheets', 'slides', 'pdf', 'mail', 'base', 'sync', 'calendar', 'flow', 'connect', 'design', 'drive'].includes(activeApp) && (
               <div className="w-full h-full flex items-center justify-center text-slate-400">
                 <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 text-center max-w-md">
                   <h2 className="text-xl font-semibold text-slate-800 mb-2">{suiteApps.find(a => a.id === activeApp)?.name} Engine Loading...</h2>
@@ -915,6 +923,7 @@ function App() {
   );
 }
 export default App;
+
 
 
 
