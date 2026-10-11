@@ -27,6 +27,7 @@ import KaraBase from './components/KaraBase';
 import KaraSync from './components/KaraSync';
 import KaraCalendar from './components/KaraCalendar';
 import KaraDrive from './components/KaraDrive';
+import KaraSeek from './components/KaraSeek';
 import { startConnectEngine } from './lib/connectEngine';
 import KaraDesign from './components/KaraDesign';
 import KaraConnect from './components/KaraConnect';
@@ -602,6 +603,7 @@ function App() {
             { id: 'flow', name: 'Kara Flow', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-50', category: 'Core' },
             { id: 'connect', name: 'Kara Connect', icon: Workflow, color: 'text-purple-500', bg: 'bg-purple-50', category: 'Core' },
             { id: 'design', name: 'Kara Design', icon: Palette, color: 'text-pink-500', bg: 'bg-pink-50', category: 'Core' },
+            { id: 'seek', name: 'Kara Seek', icon: Search, color: 'text-cyan-500', bg: 'bg-cyan-50', category: 'Core' },
             { id: 'drive', name: 'Kara Drive', icon: HardDrive, color: 'text-emerald-500', bg: 'bg-emerald-50', category: 'Core' },
             { id: 'notes', name: 'Kara Notes', icon: StickyNote, color: 'text-yellow-500', bg: 'bg-yellow-50', category: 'Core' },
   ];
@@ -849,6 +851,7 @@ function App() {
             {activeApp === 'sync' && <KaraSync />}
             {activeApp === 'calendar' && <KaraCalendar />}
             {activeApp === 'drive' && <KaraDrive />}
+            {activeApp === 'seek' && <KaraSeek />}
             {activeApp === 'design' && <KaraDesign />}
             {activeApp === 'connect' && <KaraConnect />}
             {activeApp === 'flow' && <KaraFlow />}
@@ -881,7 +884,7 @@ function App() {
 
             {activeApp === 'sheets' && <KaraSheets />}
             {activeApp === 'slides' && <KaraSlides seekReport={aiResponse} />}
-            {!['dashboard', 'word', 'notes', 'sheets', 'slides', 'pdf', 'mail', 'base', 'sync', 'calendar', 'flow', 'connect', 'design', 'drive'].includes(activeApp) && (
+            {!['dashboard', 'word', 'notes', 'sheets', 'slides', 'pdf', 'mail', 'base', 'sync', 'calendar', 'flow', 'connect', 'design', 'drive', 'seek'].includes(activeApp) && (
               <div className="w-full h-full flex items-center justify-center text-slate-400">
                 <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 text-center max-w-md">
                   <h2 className="text-xl font-semibold text-slate-800 mb-2">{suiteApps.find(a => a.id === activeApp)?.name} Engine Loading...</h2>
