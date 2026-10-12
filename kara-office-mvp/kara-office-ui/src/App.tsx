@@ -149,7 +149,9 @@ const KaraCheck = Extension.create({
 });
 
 function App() {
-  const [activeApp, setActiveApp] = useState('dashboard');
+    const params = new URLSearchParams(window.location.search);
+  const isStandaloneWord = params.get('standalone') === 'word';
+  const [activeApp, setActiveApp] = useState(isStandaloneWord ? 'word' : 'dashboard');
   const [aiMode, setAiMode] = useState('seek');
   const [prompt, setPrompt] = useState('');
   const [aiResponse, setAiResponse] = useState('');
@@ -561,7 +563,7 @@ function App() {
       { label: 'Clear Formatting', action: () => editor.chain().focus().clearNodes().unsetAllMarks().run() },
     ]},
     { name: 'Tools', items: [
-      { label: writeAssist ? '✓ Kara Write Assist (AI completion)' : '   Kara Write Assist (AI completion)', action: () => setWriteAssist(w => !w) },
+      { label: writeAssist ? 'Ã¢Å“â€œ Kara Write Assist (AI completion)' : '   Kara Write Assist (AI completion)', action: () => setWriteAssist(w => !w) },
       { label: 'AI: Fix Grammar in Selection', action: aiFixSelection },
       { label: 'AI: Translate Selection...', action: aiTranslateSelection },
       { sep: true },
@@ -577,7 +579,7 @@ function App() {
       { label: 'Delete Table', action: () => editor.commands.deleteTable() },
     ]},
     { name: 'Help', items: [
-      { label: 'About Kara Word', action: () => alert('Kara Word — part of the Kara Office Suite.\nBuilt by Karakata. 100% sovereign technology.') },
+      { label: 'About Kara Word', action: () => alert('Kara Word Ã¢â‚¬â€ part of the Kara Office Suite.\nBuilt by Karakata. 100% sovereign technology.') },
       { label: 'Keyboard Shortcuts', action: () => alert('Ctrl+B Bold | Ctrl+I Italic | Ctrl+U Underline\nCtrl+Z Undo | Ctrl+Y Redo | Ctrl+K Link\nCtrl+F Find | TAB = accept AI completion | ESC = dismiss') },
     ]},
   ] : [];
@@ -624,7 +626,7 @@ function App() {
         const response = await fetch('http://localhost:11434/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ((window as any).__karaAi || {}).model || 'qwen2.5:3b', prompt: `Offline text assistant. Task: ${promptToSend}`, stream: false, temperature: ((window as any).__karaAi || {}).temperature ?? 0.7 }) });
         const data = await response.json(); setAiResponse(data.response); publishArtifact('seek', promptToSend, data.response);
       }
-    } catch (e) { setAiResponse('⚠️ Engine error.'); setPrompt(promptToSend); }
+    } catch (e) { setAiResponse('Ã¢Å¡Â Ã¯Â¸Â Engine error.'); setPrompt(promptToSend); }
     finally { setIsThinking(false); }
   };
   const handleKeyDown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleExecute(); } };
@@ -659,7 +661,7 @@ function App() {
           <div className="flex flex-wrap gap-2 mb-2">
             {sugg.fix && <button onClick={() => applyAt(sugg.from, sugg.to, sugg.fix)} className="px-2 py-1 bg-blue-600 text-white text-xs rounded">Apply: "{sugg.fix}"</button>}
             {sugg.alts && sugg.alts.map((a, i) => (
-              <button key={i} onClick={() => applyAt(sugg.from, sugg.to, a.text)} className="px-2 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs rounded hover:bg-emerald-100">{a.label} → "{a.text}"</button>
+              <button key={i} onClick={() => applyAt(sugg.from, sugg.to, a.text)} className="px-2 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs rounded hover:bg-emerald-100">{a.label} Ã¢â€ â€™ "{a.text}"</button>
             ))}
             {sugg.split && <button onClick={() => applyAt(sugg.from, sugg.to, sugg.split)} className="px-2 py-1 bg-emerald-600 text-white text-xs rounded">Apply split: "{sugg.split}"</button>}
           </div>
@@ -754,12 +756,12 @@ function App() {
                 </div>
 
                 <div className="bg-white border-b border-slate-200 px-3 py-1.5 flex items-center gap-1 flex-wrap flex-shrink-0">
-                  <button className={btn()} onClick={() => editor.commands.undo()}>↶</button>
-                  <button className={btn()} onClick={() => editor.commands.redo()}>↷</button>
+                  <button className={btn()} onClick={() => editor.commands.undo()}>Ã¢â€ Â¶</button>
+                  <button className={btn()} onClick={() => editor.commands.redo()}>Ã¢â€ Â·</button>
                   <span className="w-px h-5 bg-slate-200 mx-1"></span>
                   <div className="relative">
                     <button onClick={() => { setFontOpen(o => !o); setSizeOpen(false); }} className="border border-slate-200 rounded text-xs py-1 px-2 w-44 flex justify-between items-center bg-white hover:bg-slate-50">
-                      <span style={{ fontFamily: curFont }}>{curFont}</span><span className="text-slate-400">▾</span>
+                      <span style={{ fontFamily: curFont }}>{curFont}</span><span className="text-slate-400">Ã¢â€“Â¾</span>
                     </button>
                     {fontOpen && (
                       <div className="absolute left-0 top-full mt-1 bg-white border border-slate-200 shadow-2xl w-80 max-h-80 overflow-auto z-50 py-1">
@@ -774,7 +776,7 @@ function App() {
                   </div>
                   <div className="relative">
                     <button onClick={() => { setSizeOpen(o => !o); setFontOpen(false); }} className="border border-slate-200 rounded text-xs py-1 px-2 w-16 flex justify-between items-center bg-white hover:bg-slate-50">
-                      <span>{curSize}</span><span className="text-slate-400">▾</span>
+                      <span>{curSize}</span><span className="text-slate-400">Ã¢â€“Â¾</span>
                     </button>
                     {sizeOpen && (
                       <div className="absolute left-0 top-full mt-1 bg-white border border-slate-200 shadow-2xl w-24 max-h-72 overflow-auto z-50 py-1">
@@ -789,26 +791,26 @@ function App() {
                   <button className={btn(editor.isActive('italic'))} onClick={() => editor.chain().focus().toggleItalic().run()}><i>I</i></button>
                   <button className={btn(editor.isActive('underline'))} onClick={() => editor.chain().focus().toggleUnderline().run()}><u>U</u></button>
                   <button className={btn(editor.isActive('strike'))} onClick={() => editor.chain().focus().toggleStrike().run()}><s>S</s></button>
-                  <button className={btn(editor.isActive('highlight'))} onClick={() => editor.chain().focus().toggleHighlight().run()}>🖍</button>
+                  <button className={btn(editor.isActive('highlight'))} onClick={() => editor.chain().focus().toggleHighlight().run()}>Ã°Å¸â€“Â</button>
                   <select className="border border-slate-200 rounded text-xs py-1 px-1" defaultValue="" onChange={(e) => e.target.value && editor.chain().focus().setColor(e.target.value).run()}>
                     <option value="">A Color</option>
                     {['#000000','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                   <span className="w-px h-5 bg-slate-200 mx-1"></span>
-                  <button className={btn(editor.isActive('bulletList'))} onClick={() => editor.chain().focus().toggleBulletList().run()}>• List</button>
+                  <button className={btn(editor.isActive('bulletList'))} onClick={() => editor.chain().focus().toggleBulletList().run()}>Ã¢â‚¬Â¢ List</button>
                   <button className={btn(editor.isActive('orderedList'))} onClick={() => editor.chain().focus().toggleOrderedList().run()}>1. List</button>
-                  <button className={btn()} onClick={() => editor.chain().focus().sinkListItem('listItem').run()}>⇥ Indent</button>
-                  <button className={btn()} onClick={() => editor.chain().focus().liftListItem('listItem').run()}>⇤ Outdent</button>
+                  <button className={btn()} onClick={() => editor.chain().focus().sinkListItem('listItem').run()}>Ã¢â€¡Â¥ Indent</button>
+                  <button className={btn()} onClick={() => editor.chain().focus().liftListItem('listItem').run()}>Ã¢â€¡Â¤ Outdent</button>
                   <span className="w-px h-5 bg-slate-200 mx-1"></span>
-                  <button className={btn(editor.isActive({ textAlign: 'left' }))} onClick={() => editor.chain().focus().setTextAlign('left').run()}>⬅</button>
-                  <button className={btn(editor.isActive({ textAlign: 'center' }))} onClick={() => editor.chain().focus().setTextAlign('center').run()}>☰</button>
-                  <button className={btn(editor.isActive({ textAlign: 'right' }))} onClick={() => editor.chain().focus().setTextAlign('right').run()}>➡</button>
-                  <button className={btn(editor.isActive({ textAlign: 'justify' }))} onClick={() => editor.chain().focus().setTextAlign('justify').run()}>⬌</button>
+                  <button className={btn(editor.isActive({ textAlign: 'left' }))} onClick={() => editor.chain().focus().setTextAlign('left').run()}>Ã¢Â¬â€¦</button>
+                  <button className={btn(editor.isActive({ textAlign: 'center' }))} onClick={() => editor.chain().focus().setTextAlign('center').run()}>Ã¢ËœÂ°</button>
+                  <button className={btn(editor.isActive({ textAlign: 'right' }))} onClick={() => editor.chain().focus().setTextAlign('right').run()}>Ã¢Å¾Â¡</button>
+                  <button className={btn(editor.isActive({ textAlign: 'justify' }))} onClick={() => editor.chain().focus().setTextAlign('justify').run()}>Ã¢Â¬Å’</button>
                   <span className="w-px h-5 bg-slate-200 mx-1"></span>
-                  <button className={btn()} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>⊞ Table</button>
-                  <button className={btn()} onClick={() => { const url = window.prompt('Image URL:'); if (url) editor.chain().focus().setImage({ src: url }).run(); }}>🖼</button>
-                  <button className={btn()} onClick={() => { const url = window.prompt('Link URL:'); if (url) editor.chain().focus().setLink({ href: url }).run(); }}>🔗</button>
-                  <button className={btn()} onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}>⌫ Clear</button>
+                  <button className={btn()} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>Ã¢Å Å¾ Table</button>
+                  <button className={btn()} onClick={() => { const url = window.prompt('Image URL:'); if (url) editor.chain().focus().setImage({ src: url }).run(); }}>Ã°Å¸â€“Â¼</button>
+                  <button className={btn()} onClick={() => { const url = window.prompt('Link URL:'); if (url) editor.chain().focus().setLink({ href: url }).run(); }}>Ã°Å¸â€â€”</button>
+                  <button className={btn()} onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}>Ã¢Å’Â« Clear</button>
                 </div>
 
                 {showFind && (
@@ -819,7 +821,7 @@ function App() {
                     <button onClick={findNext} className="px-2 py-1 bg-slate-800 text-white text-xs rounded">Find Next</button>
                     <button onClick={replaceAll} className="px-2 py-1 bg-amber-600 text-white text-xs rounded">Replace All</button>
                     <span className="text-[10px] text-amber-700">{findStatus}</span>
-                    <button onClick={() => setShowFind(false)} className="ml-auto text-slate-400 text-xs">✕</button>
+                    <button onClick={() => setShowFind(false)} className="ml-auto text-slate-400 text-xs">Ã¢Å“â€¢</button>
                   </div>
                 )}
 
@@ -930,6 +932,7 @@ function App() {
   );
 }
 export default App;
+
 
 
 

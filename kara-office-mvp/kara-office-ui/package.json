@@ -29,6 +29,8 @@
     "@tiptap/react": "^2.27.3",
     "@tiptap/starter-kit": "^2.27.3",
     "autoprefixer": "^10.6.1",
+    "docx": "^9.10.0",
+    "file-saver": "^2.0.5",
     "hyperformula": "^3.5.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
