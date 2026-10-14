@@ -1,126 +1,185 @@
-﻿const express = require('express');
+require('dotenv').config();
+const express = require('express');
 const cors = require('cors');
-const { Ollama } = require('ollama');
+const axios = require('axios');
+const fetch = require('node-fetch');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const ollama = new Ollama({ host: 'http://127.0.0.1:11434' });
+// Infrastructure URLs
+const SEARXNG_PORT = process.env.SEARXNG_PORT || '8888';
+const SEARXNG_URL = `http://localhost:${SEARXNG_PORT}`;
+const OLLAMA_URL = 'http://localhost:11434/api/generate';
+const CREDITS_API_URL = 'http://localhost:3000/api/credits';
 
-async function searchWeb(query) {
-  const logs = [];
-  try {
-    logs.push('🔍 Querying Kara Search (Homegrown Meta-Search Engine)...');
-    const cleanQuery = query.replace(/^["']|["']$/g, '').trim();
-    const searchUrl = `http://localhost:8888/search?q=${encodeURIComponent(cleanQuery)}&format=json`;
-    
-    const response = await fetch(searchUrl, { method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': 'KaraSeek-Agent/1.0' } });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
-    const rawData = await response.text();
-    let data;
-    try { data = JSON.parse(rawData); } catch (parseError) { throw new Error("SearXNG returned HTML, not JSON."); }
+// Qwen Cloud Configuration (DashScope API)
+const QWEN_API_KEY = process.env.QWEN_API_KEY || '';
+const QWEN_PRIMARY_MODEL = process.env.QWEN_PRIMARY_MODEL || 'qwen-max'; // Qwen 3.8
+const QWEN_FALLBACK_MODEL = process.env.QWEN_FALLBACK_MODEL || 'qwen-plus'; // Qwen 3.75
+const DASHSCOPE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 
-    const resultsArray = data.results || data.data?.results || [];
-    
-    if (resultsArray.length > 0) {
-      logs.push(`✅ Kara Search successful. Found ${resultsArray.length} results.`);
-      const formattedResults = resultsArray.map(r => `[Source: ${r.engine || 'Web'}] ${r.title}: ${r.content || r.snippet || r.body || 'No description'}`).join('\n');
-      return { success: true, logs, results: formattedResults };
-    } else {
-      throw new Error("No results found");
-    }
-  } catch (err) {
-    logs.push(`⚠️ Kara Search failed: ${err.message}`);
-    return { success: false, logs, results: [] };
-  }
-}
+// Local Sovereign Models
+const LOCAL_HIGH_FLYER = 'qwen2.5:3b';
+const LOCAL_FALLBACK = 'qwen2.5:0.5b';
 
 app.post('/api/seek', async (req, res) => {
-  const { goal } = req.body;
+  const { prompt, offlineMode, email } = req.body;
 
-  // Split sheet CONTEXT from the actual TASK so the web search gets a clean query
-  let task = goal;
-  const marker = '\n\nTASK: ';
-  const mi = goal.indexOf(marker);
-  if (mi !== -1) { task = goal.slice(mi + marker.length); }
-  const searchQuery = task.split('\n')[0].split(/\s+/).slice(0, 12).join(' ');
-  const isSheetMission = mi !== -1;
-  const wantsLive = /research|current|latest|live|today|exchange|vat|tax rate|market|price of|verify|confirm|2026|usd|ngn|inflation/i.test(task);
-  
-  const systemPrompt = `You are Kara Seek, an advanced autonomous AI Agent built for the Kara Office Suite by Karakata. Current Year: 2026.
+  // STEP 1: CREDIT DEDUCTION FOR CLOUD QUERIES
+  if (!offlineMode && email) {
+    try {
+      const creditCheck = await fetch(`${CREDITS_API_URL}?email=${encodeURIComponent(email)}`);
+      const creditData = await creditCheck.json();
 
-CRITICAL PROTOCOLS:
-1. SELF-AWARENESS: If asked who you are or to "tell me about yourself", introduce yourself as Kara Seek first.
-2. MANDATORY SEARCH: For ANY question asking for lists, rankings, current events, business data, locations, or specific facts (e.g., "top 10 companies", "where is", "status of"), you MUST rely on live search data. 
-3. NO LAZY ANSWERS: DO NOT guess lists or facts from your internal memory. Your internal training data is outdated.
-4. SHEET MISSIONS: If the user message contains CONTEXT CSV data, those numbers are ground truth. Do the arithmetic carefully step by step. A cell holding a tax AMOUNT is NOT a percentage; compute a percentage only as (amount / base) * 100.
-5. RELEVANCE: If the live search results do not match the TASK, ignore them completely and state: "Live sources were not relevant; here is the sheet-based answer."
-6. OUTPUT: Wrap your final, complete synthesized answer in <answer> tags.`;
+      if (creditData.balance < 1) {
+        return res.status(402).json({
+          error: 'Insufficient credits for cloud AI query. Please purchase more credits.',
+          balance: creditData.balance
+        });
+      }
 
-  let conversation = [{ role: 'system', content: systemPrompt }, { role: 'user', content: `COMPLEX GOAL: ${goal}` }];
-  let maxSteps = 4;
-  let step = 0;
-  let allLogs = [];
-  let aiText = ''; 
+      // Deduct 1 credit
+      await fetch(CREDITS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          cost: 1,
+          source: 'kara_seek_cloud',
+          description: `Kara Seek query: "${prompt.substring(0, 50)}..."`,
+          metadata: { prompt_length: prompt.length, offlineMode }
+        })
+      });
+
+      console.log(`?? Deducted 1 credit from ${email} for Kara Seek query`);
+    } catch (err) {
+      console.error('Credit deduction failed:', err.message);
+      return res.status(500).json({ error: 'Billing service unavailable' });
+    }
+  }
 
   try {
-    while (step < maxSteps) {
-      step++;
-      allLogs.push(`🧠 Step ${step}: Executing mission phase...`);
-      
-      const response = await ollama.chat({ model: 'qwen2.5:3b', messages: conversation });
-      aiText = response.message.content;
-      conversation.push({ role: 'assistant', content: aiText });
+    // STEP 2: FETCH LIVE CONTEXT FROM SEARXNG
+    const searchRes = await axios.get(`${SEARXNG_URL}/search`, {
+      params: { q: prompt, format: 'json', categories: 'general' },
+      timeout: 10000
+    });
 
-      if (step === 1) {
-         // ANTI-HALLUCINATION TRIGGER:
-         // Only skip search if it's a basic greeting/introduction.
-         // For EVERYTHING else (lists, facts, business), FORCE the search.
-         const isBasicGreeting = /^(hi|hello|hey|who are you|tell me about yourself|introduce yourself|how are you)/i.test(goal);
-         const sheetGrounded = isSheetMission && !wantsLive;
-         
-         const needsSearch = !isBasicGreeting || aiText.toLowerCase().includes('search');
-         
-         if (sheetGrounded) {
-           allLogs.push('📊 Sheet-grounded mission: answering strictly from uploaded data (no web search).');
-           conversation.push({ role: 'user', content: 'GROUNDING RULE: Answer using ONLY the CONTEXT sheet data provided. Do NOT invent numbers, measurements, savings percentages or equipment IDs that are not present in the data. If the data lacks what is needed, state exactly what is missing.' });
-           continue;
-         }
-         if (needsSearch) {
-             allLogs.push(`🌐 Agent initiating live data search (Forcing fact-check)...`);
-             const searchResult = await searchWeb(searchQuery);
-             allLogs.push(...searchResult.logs);
+    let liveContext = "";
+    if (searchRes.data && searchRes.data.results && searchRes.data.results.length > 0) {
+      liveContext = searchRes.data.results.slice(0, 5)
+        .map((r, i) => `[${i+1}] ${r.title}: ${r.content || ''}`)
+        .join('\n');
+    }
 
-             if (searchResult.success) {
-               conversation.push({ role: 'user', content: `LIVE DATA ACQUIRED:\n${searchResult.results}\n\nINSTRUCTION: Synthesize this live data to complete your answer. Wrap in <answer> tags.` });
-             } else {
-               conversation.push({ role: 'user', content: 'Search failed. Finish your answer, but warn that live data was unavailable.' });
-             }
-             continue;
-         }
-      }
+    let finalAnswer = "";
+    let modeUsed = "";
 
-      if (aiText.includes('<answer>')) {
-        const finalAnswer = aiText.split('<answer>')[1].split('</answer>')[0].trim();
-        allLogs.push(`✅ Mission Complete.`);
-        return res.json({ success: true, answer: finalAnswer, logs: allLogs });
-      }
-      
-      if (step === 3) {
-        conversation.push({ role: 'user', content: 'STOP. Output your final answer inside <answer> tags NOW.' });
+    // STEP 3: THE KARA ROUTER - QWEN 3.8 ? 3.75 ? LOCAL FALLBACK CHAIN
+    if (offlineMode) {
+      // === SOVEREIGN MODE: LOCAL OLLAMA ONLY ===
+      modeUsed = "SOVEREIGN (Local Ollama)";
+      console.log('?? Routing to SOVEREIGN Local Engine');
+
+      const aiRes = await axios.post(OLLAMA_URL, {
+        model: LOCAL_HIGH_FLYER,
+        prompt: `You are a STRICT TEXT PARSER. Read the search text below and answer: "${prompt}".
+SEARCH TEXT: "${liveContext || 'No results'}".
+Extract ONLY items explicitly mentioned in the text. Output a simple numbered list.`,
+        stream: false,
+        temperature: 0.1
+      });
+      finalAnswer = aiRes.data.response || "Local engine returned no data.";
+
+    } else {
+      // === CLOUD MODE: QWEN 3.8 ? 3.75 ? LOCAL FALLBACK ===
+      if (!QWEN_API_KEY || QWEN_API_KEY === 'YOUR_API_KEY_HERE') {
+        console.log('?? No valid Qwen API Key. Falling back to local Ollama.');
+        modeUsed = "LOCAL FALLBACK (No API Key)";
+        const aiRes = await axios.post(OLLAMA_URL, {
+          model: LOCAL_HIGH_FLYER,
+          prompt: `Based on this context: "${liveContext}", answer comprehensively: "${prompt}". List all items fully.`,
+          stream: false,
+          temperature: 0.3
+        });
+        finalAnswer = aiRes.data.response;
+      } else {
+        try {
+          // TRY PRIMARY: QWEN 3.8 (qwen-max)
+          modeUsed = `KARA CLOUD (Primary: ${QWEN_PRIMARY_MODEL} - Qwen 3.8)`;
+          console.log(`?? Routing to Primary Cloud: ${QWEN_PRIMARY_MODEL}`);
+
+          const cloudRes = await axios.post(DASHSCOPE_URL, {
+            model: QWEN_PRIMARY_MODEL,
+            messages: [
+              { role: 'system', content: 'You are Kara Cloud, an advanced enterprise AI. Provide comprehensive, accurate answers. If a list is requested, list all items clearly.' },
+              { role: 'user', content: `Search Context: ${liveContext}\n\nQuestion: ${prompt}` }
+            ]
+          }, {
+            headers: {
+              'Authorization': `Bearer ${QWEN_API_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          finalAnswer = cloudRes.data.choices[0].message.content;
+
+        } catch (primaryError) {
+          console.warn('?? Qwen 3.8 failed. Trying Qwen 3.75 fallback...', primaryError.message);
+
+          try {
+            // TRY FALLBACK: QWEN 3.75 (qwen-plus)
+            modeUsed = `KARA CLOUD (Fallback: ${QWEN_FALLBACK_MODEL} - Qwen 3.75)`;
+            console.log(`?? Routing to Fallback Cloud: ${QWEN_FALLBACK_MODEL}`);
+
+            const fallbackRes = await axios.post(DASHSCOPE_URL, {
+              model: QWEN_FALLBACK_MODEL,
+              messages: [
+                { role: 'system', content: 'You are Kara Cloud. Provide a comprehensive answer.' },
+                { role: 'user', content: `Search Context: ${liveContext}\n\nQuestion: ${prompt}` }
+              ]
+            }, {
+              headers: {
+                'Authorization': `Bearer ${QWEN_API_KEY}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            finalAnswer = fallbackRes.data.choices[0].message.content;
+
+          } catch (fallbackError) {
+            console.error('? Both Qwen 3.8 and 3.75 failed. Ultimate fallback to Local Ollama.');
+            modeUsed = "ULTIMATE FALLBACK (Local Ollama)";
+            const aiRes = await axios.post(OLLAMA_URL, {
+              model: LOCAL_HIGH_FLYER,
+              prompt: `Answer based on this context: "${liveContext}". Question: "${prompt}"`,
+              stream: false
+            });
+            finalAnswer = aiRes.data.response + "\n\n*(Note: Cloud API failed, used local fallback)*";
+          }
+        }
       }
     }
-    
-    res.json({ success: true, answer: aiText, logs: allLogs });
+
+    // STEP 4: RETURN THE ANSWER
+    res.json({
+      success: true,
+      answer: finalAnswer,
+      context: liveContext.substring(0, 500),
+      mode: modeUsed,
+      credits_used: offlineMode ? 0 : 1
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Seek Engine Error:', error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
 const PORT = 3001;
-app.listen(PORT, () => console.log(`🚀 Kara Seek (Anti-Hallucination) running on port ${PORT}`));
-
-
-
+app.listen(PORT, () => {
+  console.log(`?? Kara Seek Router running on port ${PORT}`);
+  console.log(`   Primary: ${QWEN_PRIMARY_MODEL} (Qwen 3.8)`);
+  console.log(`   Fallback: ${QWEN_FALLBACK_MODEL} (Qwen 3.75)`);
+  console.log(`   Sovereign: Local Ollama`);
+});

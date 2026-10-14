@@ -16,3 +16,5 @@ Thumbs.db
 kara-desktop/dist/
 kara-desktop/renderer/
 kara-desktop/node_modules/
+.vercel
+.env*

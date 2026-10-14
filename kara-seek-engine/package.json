@@ -1,17 +1,16 @@
 {
   "name": "kara-seek-engine",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "100% Local, Free, On-Prem AI Search Backend",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "ollama": "^0.6.4"
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^18.0.7",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0"
   }
 }

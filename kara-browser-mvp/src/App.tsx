@@ -1,10 +1,12 @@
 ﻿import { useState, useRef } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, Shield, MessageSquare, Lock, Gamepad2, Briefcase, Folder, Wallet, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCw, Shield, MessageSquare, Lock, Gamepad2, Briefcase, Folder, Wallet, X, Search } from 'lucide-react';
+import KaraSeekSidebar from './components/KaraSeekSidebar';
 
 function App() {
   const [url, setUrl] = useState('https://www.google.com');
   const [inputUrl, setInputUrl] = useState('https://www.google.com');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSeekOpen, setIsSeekOpen] = useState(false);
   const webviewRef = useRef(null);
 
   const handleGo = (e: React.FormEvent) => { e.preventDefault(); setUrl(inputUrl); };
@@ -29,9 +31,20 @@ function App() {
           <form onSubmit={handleGo} className="flex-1 flex">
             <input value={inputUrl} onChange={(e)=>setInputUrl(e.target.value)} className="w-full bg-slate-700 rounded-full px-4 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search or enter URL" />
           </form>
+          
+          {/* Kara Seek Toggle Button */}
+          <button 
+            onClick={() => setIsSeekOpen(!isSeekOpen)} 
+            className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded border transition ${isSeekOpen ? 'bg-cyan-600 border-cyan-500 text-white' : 'bg-cyan-900/30 border-cyan-800 text-cyan-400 hover:bg-cyan-900/50'}`}
+          >
+            <Search size={14} /> 
+            <span>{isSeekOpen ? 'Seek Active' : 'Kara Seek'}</span>
+          </button>
+
+          {/* Secure Enclave Toggle Button */}
           <button 
             onClick={() => setSidebarOpen(!sidebarOpen)} 
-            className={sidebarOpen ? 'flex items-center gap-1 text-xs px-3 py-1.5 rounded border bg-emerald-600 border-emerald-500 text-white' : 'flex items-center gap-1 text-xs px-3 py-1.5 rounded border bg-emerald-900/30 border-emerald-800 text-emerald-400 hover:bg-emerald-900/50'}
+            className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded border transition ${sidebarOpen ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-emerald-900/30 border-emerald-800 text-emerald-400 hover:bg-emerald-900/50'}`}
           >
             <Shield size={14} /> 
             <span>{sidebarOpen ? 'Enclave Active' : 'Secure Enclave'}</span>
@@ -40,6 +53,12 @@ function App() {
         <webview ref={webviewRef} src={url} className="flex-1 w-full bg-white" />
       </div>
 
+      {/* Kara Seek Sidebar */}
+      {isSeekOpen && (
+        <KaraSeekSidebar isOpen={isSeekOpen} onClose={() => setIsSeekOpen(false)} />
+      )}
+
+      {/* Secure Enclave Sidebar */}
       {sidebarOpen && (
         <div className="w-80 bg-slate-800 border-l border-slate-700 flex flex-col">
            <div className="h-12 border-b border-slate-700 flex items-center justify-between px-4 font-semibold">
@@ -67,4 +86,5 @@ function App() {
     </div>
   );
 }
+
 export default App;
