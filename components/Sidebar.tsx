@@ -2,67 +2,75 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const links = [
-  { href: "/validator", label: "Idea Validator", icon: "💡", highlight: false },
-  { href: "/business-model", label: "Business Model", icon: "📊", highlight: false },
-  { href: "/persona", label: "Customer Persona", icon: "👤", highlight: false },
-  { href: "/landing-page", label: "Landing Page Copy", icon: "✍️", highlight: false },
-  { href: "/pricing", label: "Pricing", icon: "💎", highlight: false },
-  { href: "/auth", label: "Sign in / Account", icon: "🔐", highlight: false },
-  { href: "/team", label: "My Team", icon: "👥", highlight: false },
-  { href: "/contact", label: "Contact & Support", icon: "📬", highlight: false },
-  { href: "/suite/business", label: "Business Suite", icon: "⭐", highlight: true },
-  { href: "/suite/office", label: "Office Suite", icon: "🗂️", highlight: true },
-];
+// SVG Icon Components
+const CartIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+);
+const BriefcaseIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+);
+const WrenchIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+);
+const HospitalIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.56 5.01c.45-.45 1.18-.45 1.63 0l.7.7c.45.45.45 1.18 0 1.63l-.7.7c-.45.45-1.18.45-1.63 0l-.7-.7c-.45-.45-.45-1.18 0-1.63zM19.85 9.85c.45-.45.45-1.18 0-1.63l-.7-.7c-.45-.45-1.18-.45-1.63 0l-.7.7c-.45.45-.45 1.18 0 1.63l.7.7c.45.45 1.18.45 1.63 0z"/><path d="M12 2v20M2 12h20"/></svg>
+);
+const GlobeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+);
+const RocketIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+);
 
 export default function Sidebar() {
   const pathname = usePathname();
-
-  if (pathname === "/") {
-    return null;
-  }
+  
+  // Each item now has an iconColor (for the icon itself) and activeColor (for the background when clicked)
+  const navItems = [
+    { href: "/karakata", label: "KaraKata Market", Icon: CartIcon, iconColor: "text-amber-500", activeColor: "bg-amber-500", title: "Shopping Cart" },
+    { href: "/suite/business", label: "Business Suite", Icon: BriefcaseIcon, iconColor: "text-cyan-500", activeColor: "bg-cyan-600", title: "Business Tools" },
+    { href: "/suite/engineering", label: "Engineering Suite", Icon: WrenchIcon, iconColor: "text-yellow-400", activeColor: "bg-yellow-500", title: "Engineering Tools" },
+    { href: "/suite/healthcare", label: "Healthcare Suite", Icon: HospitalIcon, iconColor: "text-rose-500", activeColor: "bg-rose-500", title: "Healthcare Tools" },
+    { href: "/suite/kaws", label: "KAWS", Icon: GlobeIcon, iconColor: "text-cyan-400", activeColor: "bg-cyan-600", title: "KaraKata AI Web Services" },
+    { href: "/launch", label: "Launch", Icon: RocketIcon, iconColor: "text-purple-500", activeColor: "bg-purple-600", title: "Launch Your Project" },
+  ];
 
   return (
-    <aside className="w-64 border-r border-white/10 bg-slate-900/50 p-6 hidden md:block">
-      <div className="mb-8">
-        <Link href="/suite/engineering" className="block">
-          <p className="text-sm uppercase tracking-[0.2em] text-cyan-400">FounderPilot</p>
-          <h1 className="text-xl font-bold mt-1">AI Suite</h1>
-        </Link>
-        </div>
-      <nav className="space-y-2">
-        {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition ${
-              pathname === link.href
-                ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
-                : link.highlight 
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 shadow-lg shadow-cyan-500/10" 
-                  : "text-slate-300 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            <span className={link.highlight ? "animate-pulse text-lg" : ""}>{link.icon}</span>
-            <span>{link.label}</span>
-            {link.highlight && (
-              <span className="ml-auto text-[10px] font-bold bg-cyan-500 text-slate-950 px-1.5 py-0.5 rounded-full animate-pulse">
-                NEW
+    <aside className="w-64 bg-slate-900 border-r border-slate-800 h-screen sticky top-0 p-4 flex flex-col">
+      <div className="mb-8 px-4">
+        <h1 className="text-xl font-bold text-cyan-400 mb-1">FounderPilot</h1>
+        <p className="text-xs text-slate-400">KAWS</p>
+      </div>
+      
+      <nav className="flex-1 space-y-2">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              title={item.title}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                isActive 
+                  ? `${item.activeColor} text-white shadow-lg` 
+                  : "text-slate-300 hover:bg-slate-800"
+              }`}
+            >
+              {/* The icon gets its own permanent theme color */}
+              <span className={item.iconColor}>
+                <item.Icon />
               </span>
-            )}
-          </Link>
-        ))}
+              <span className="font-medium text-sm">{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
-      <div className="mt-8 pt-8 border-t border-white/10">
-        <Link href="/suite/engineering" className="mt-3 flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/20"><span>🛠️</span><span>Engineering Suite</span><span className="ml-auto rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">NEW</span></Link>
-<Link href="/suite/healthcare" className="mt-3 flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/20"><span>🩺</span><span>Healthcare Suite</span><span className="ml-auto rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">NEW</span></Link>
-<Link href="/suite/ounje" className="mt-3 flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/20"><span>🍲</span><span>Nutrition Suite</span><span className="ml-auto rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">NEW</span></Link>
-<Link href="/suite/marketplace" className="mt-3 flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/20"><span>🛒</span><span>Marketplace Suite</span><span className="ml-auto rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">NEW</span></Link>
-<Link href="/karakata" className="block rounded-lg bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 ml-2">🛒 Open the Market →</Link>
 
-<Link href="/" className="text-sm text-slate-400 hover:text-white flex items-center gap-2">
-           ← Back to Home
-         </Link>
+      <div className="mt-auto pt-4 border-t border-slate-800">
+        <div className="bg-slate-800 rounded-lg p-4">
+          <p className="text-xs text-slate-400 mb-1">Wallet Balance</p>
+          <p className="text-lg font-bold text-emerald-400">20 Credits</p>
+        </div>
       </div>
     </aside>
   );
