@@ -1,59 +1,181 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
-const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-export default function Auth() {
-  const [mode, setMode] = useState<"in" | "up">("in");
-  const [email, setEmail] = useState("");
-  const [pw, setPw] = useState("");
-  const [msg, setMsg] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [me, setMe] = useState("");
-  const [next, setNext] = useState("/suite");
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+export default function AuthPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [mode, setMode] = useState("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  // Check if user is already signed in
   useEffect(() => {
-    try { setNext(new URLSearchParams(window.location.search).get("next") || "/suite"); } catch (e) {}
-    sb.auth.getSession().then(({ data }: any) => { if (data && data.session) setMe(data.session.user.email || ""); });
-  }, []);
-  const submit = async () => {
-    if (!email.trim() || !pw.trim()) { setMsg("Enter your email and a password (6+ characters)."); return; }
-    setBusy(true); setMsg("");
-    try {
-      if (mode === "in") {
-        const { error } = await sb.auth.signInWithPassword({ email: email, password: pw });
-        if (error) setMsg(String(error.message));
-        else { setMsg("Signed in! Taking you back..."); setTimeout(() => router.push(next), 700); }
-      } else {
-        const { data, error } = await sb.auth.signUp({ email: email, password: pw, options: { emailRedirectTo: window.location.origin + next } });
-        if (error) setMsg(String(error.message));
-        else if (data.user && !data.session) setMsg("Account created! Check your inbox and click the confirmation link to activate it, then sign in here.");
-        else { setMsg("Account created and signed in!"); setTimeout(() => router.push(next), 700); }
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setIsSignedIn(true);
+        // Redirect to where they came from, or default to /karakata
+        const callbackUrl = searchParams.get('callbackUrl') || '/karakata';
+        router.push(callbackUrl);
       }
-    } catch (e) { setMsg("Connection error."); }
-    setBusy(false);
+    };
+    checkSession();
+  }, [router, searchParams]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    if (mode === "signin") {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setError(error.message);
+      } else {
+        setMessage("Signed in successfully! Redirecting...");
+        // Wait a moment for user to see message, then redirect
+        setTimeout(() => {
+          const callbackUrl = searchParams.get('callbackUrl') || '/karakata';
+          router.push(callbackUrl);
+        }, 1000);
+      }
+    } else {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin + "/auth" },
+      });
+      if (error) {
+        setError(error.message);
+      } else {
+        setMessage("Account created! Check your email to confirm.");
+      }
+    }
+    setLoading(false);
   };
-  const inp = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900";
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white p-6 shadow-2xl">
-        <Link href={next} className="text-xs font-bold text-slate-500 hover:underline">← Back</Link>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900">🔐 FounderPilot Account</h1>
-        <p className="mt-1 text-xs text-slate-500">One account for every suite: KaraKata Market, iLera Healthcare, Engineering, Business and Nutrition.</p>
-        {me && (<div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs font-bold text-emerald-700">Signed in as {me} · <button onClick={() => { sb.auth.signOut(); setMe(""); setMsg("Signed out."); }} className="underline">sign out</button></div>)}
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <button onClick={() => setMode("in")} className={"rounded-lg px-3 py-2 text-sm font-bold " + (mode === "in" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600")}>Sign In</button>
-          <button onClick={() => setMode("up")} className={"rounded-lg px-3 py-2 text-sm font-bold " + (mode === "up" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600")}>Create Account</button>
+
+  if (isSignedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-8 max-w-md w-full shadow-2xl text-center">
+          <div className="text-3xl mb-4">?</div>
+          <h2 className="text-2xl font-bold text-white mb-2">Already Signed In</h2>
+          <p className="text-slate-400 mb-4">Redirecting you to the marketplace...</p>
+          <Link href="/karakata" className="text-cyan-400 hover:text-cyan-300">
+            Go to KaraKata ?
+          </Link>
         </div>
-        <p className="mt-4 text-[11px] font-bold text-slate-600">Email</p>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={"mt-1 " + inp} placeholder="you@email.com" />
-        <p className="mt-3 text-[11px] font-bold text-slate-600">Password</p>
-        <input value={pw} onChange={(e) => setPw(e.target.value)} type="password" className={"mt-1 " + inp} placeholder="6+ characters" />
-        <button onClick={submit} disabled={busy} className="mt-4 w-full rounded-lg bg-amber-500 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50">{busy ? "Working..." : mode === "in" ? "Sign In" : "Create Account & Send Confirmation"}</button>
-        {msg && (<p className={"mt-3 text-xs font-bold " + (msg.indexOf("!") === msg.length - 1 || msg.indexOf("Taking") >= 0 ? "text-emerald-700" : "text-rose-700")}>{msg}</p>)}
-        {mode === "up" && (<p className="mt-3 text-[11px] text-slate-500">We email a confirmation link to verify you own this address - the same standard Amazon, eBay and Shopify use. Your credits, listings and orders attach to this account.</p>)}
       </div>
-    </main>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-8 max-w-md w-full shadow-2xl">
+        <div className="mb-6">
+          <Link href="/" className="text-sm text-cyan-400 hover:text-cyan-300">
+            ? Back
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-3xl">??</span>
+          <h2 className="text-2xl font-bold text-white">FounderPilot Account</h2>
+        </div>
+        <p className="text-slate-400 mb-6 text-sm">
+          One account for the entire FounderPilot Ecosystem: KaraKata Marketplace, Business Suite, Engineering Suite, Healthcare Suite, KAWS, and more.
+        </p>
+
+        <div className="flex gap-2 mb-6">
+          <button
+            type="button"
+            onClick={() => { setMode("signin"); setError(""); setMessage(""); }}
+            className={`flex-1 py-2 rounded-md font-semibold transition ${mode === "signin" ? "bg-slate-700 text-white" : "bg-slate-900 text-slate-400 hover:text-white"}`}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode("signup"); setError(""); setMessage(""); }}
+            className={`flex-1 py-2 rounded-md font-semibold transition ${mode === "signup" ? "bg-slate-700 text-white" : "bg-slate-900 text-slate-400 hover:text-white"}`}
+          >
+            Create Account
+          </button>
+        </div>
+
+        {message && (
+          <div className="bg-emerald-900/50 border border-emerald-500 text-emerald-300 px-4 py-3 rounded mb-4 text-sm">
+            {message}
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-900/50 border border-red-500 text-red-300 px-4 py-3 rounded mb-4 text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-md text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              placeholder="you@email.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-md text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              placeholder="6+ characters"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold py-3 px-4 rounded-md transition disabled:opacity-50"
+          >
+            {loading ? "Processing..." : mode === "signin" ? "Sign In" : "Create Account & Send Confirmation"}
+          </button>
+        </form>
+
+        {mode === "signin" && (
+          <div className="mt-4 text-center">
+            <Link href="/auth/forgot-password" className="text-sm text-cyan-400 hover:text-cyan-300">
+              Forgot Password?
+            </Link>
+          </div>
+        )}
+
+        {mode === "signup" && (
+          <p className="mt-4 text-xs text-slate-400 text-center">
+            We email a confirmation link to verify you own this address � the same standard Amazon, eBay and Shopify use. Your credits, listings and orders attach to this account.
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

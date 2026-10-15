@@ -10,6 +10,7 @@ export default function Checkout() {
   const [name, setName] = useState(""); const [email, setEmail] = useState("");
   const [phone, setPhone] = useState(""); const [addr1, setAddr1] = useState(""); const [addr2, setAddr2] = useState(""); const [city, setCity] = useState(""); const [stateP, setStateP] = useState(""); const [zip, setZip] = useState(""); const [country, setCountry] = useState("Nigeria"); useEffect(() => { try { if (new URLSearchParams(window.location.search).get("success") === "1") { localStorage.setItem("kara_cart", "[]"); setCart([]); } } catch (e) {} }, []); useEffect(() => { const z = (zip || "").trim(); const st = (stateP || "").trim(); const US = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"]; const su = st.toUpperCase(); let d = ""; if (/^\d{5}(-\d{4})?$/.test(z) && (US.includes(su) || /georgia|california|texas|florida|new york|illinois|ohio|arizona|washington|virginia|maryland|jersey|michigan|pennsylvania|carolina|tennessee|indiana|missouri|wisconsin|minnesota|colorado|alabama|louisiana|kentucky|oregon|oklahoma|connecticut|utah|iowa|nevada|arkansas|mississippi|kansas|nebraska|idaho|hawaii|maine|hampshire|montana|rhode island|delaware|dakota|alaska|vermont|wyoming/i.test(st))) d = "United States"; else if (/^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i.test(z)) d = "United Kingdom"; else if (/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/.test(z)) d = "Canada"; else if (/^\d{6}$/.test(z)) d = "Nigeria"; if (d) setCountry(d); }, [zip, stateP]); // AUTO-DETECT country
   const [method, setMethod] = useState("card");
+  const [shippingMethod, setShippingMethod] = useState("standard");
   const [cnum, setCnum] = useState(""); const [cname, setCname] = useState(""); const [cexp, setCexp] = useState(""); const [ccvc, setCcvc] = useState("");
   const [msg, setMsg] = useState(""); const [busy, setBusy] = useState(false); const [done, setDone] = useState("");
   useEffect(() => {
@@ -21,6 +22,8 @@ export default function Checkout() {
   }, []);
   const items = cart.map((c) => ({ ...c, it: listings.find((l: any) => String(l.id) === String(c.id)) || c.it })).filter((x) => x.it);
   const total = items.reduce((a, x) => a + Number(x.it.price_usd || 0) * x.qty, 0);
+  const shippingCost = shippingMethod === "express" ? 15.00 : 5.00;
+  const finalTotal = total + shippingCost;
   const setQty = (id: any, q: number) => { const nx = q < 1 ? cart.filter((c) => String(c.id) !== String(id)) : cart.map((c) => (String(c.id) === String(id) ? { ...c, qty: q } : c)); setCart(nx); localStorage.setItem("kara_cart", JSON.stringify(nx)); };
   const rm = (id: any) => { const i = cart.findIndex((c) => String(c.id) === String(id)); if (i < 0) return; const nx = [...cart]; nx.splice(i, 1); setCart(nx); localStorage.setItem("kara_cart", JSON.stringify(nx)); };
   const digits = cnum.replace(/\D/g, "");
@@ -40,7 +43,7 @@ export default function Checkout() {
     const pstat = method === "cod" || method === "bank" ? "pay_at_fulfillment" : "pending_gateway";
     try {
       const first = items[0];
-      if (method === "card") { const pr = await fetch("/api/karakata/pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items, email: email, name: name, phone: phone, address: [addr1, addr2, city, stateP, zip, country].filter((x) => String(x).trim()).join(", "), origin: window.location.origin }) }); const pj = await pr.json(); if (pj && pj.url) { window.location.href = pj.url; return; } setMsg(pj && pj.error ? String(pj.error) : "Stripe session failed - use Pay now with Stripe above."); return; } const r = await fetch("/api/karakata/order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items.map((x) => ({ id: x.id, listing_id: x.id, seller_id: x.it.seller_id, qty: x.qty, unit_price: x.it.price_usd, price_usd: x.it.price_usd, title: x.it.title })), listing_id: first.id, seller_id: first.it.seller_id, qty: first.qty, unit_price: first.it.price_usd, total: total, buyer_email: email, buyer_name: name, buyer_phone: phone, address: [addr1, addr2, city, stateP, zip, country].filter((x) => String(x).trim()).join(", "), payment_method: method === "card" ? ("card:" + brand + ":" + digits.slice(-4)) : method, payment_status: pstat, note: "Items: " + items.map((x) => x.it.title + " x" + x.qty).join("; ") + " | Payment: " + method + " (" + pstat + ")" }) });
+      if (method === "card") { const pr = await fetch("/api/karakata/pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items, email: email, name: name, phone: phone, address: [addr1, addr2, city, stateP, zip, country].filter((x) => String(x).trim()).join(", "), origin: window.location.origin }) }); const pj = await pr.json(); if (pj && pj.url) { window.location.href = pj.url; return; } setMsg(pj && pj.error ? String(pj.error) : "Stripe session failed - use Pay now with Stripe above."); return; } const r = await fetch("/api/karakata/order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items.map((x) => ({ id: x.id, listing_id: x.id, seller_id: x.it.seller_id, qty: x.qty, unit_price: x.it.price_usd, price_usd: x.it.price_usd, title: x.it.title })), listing_id: first.id, seller_id: first.it.seller_id, qty: first.qty, unit_price: first.it.price_usd, total: finalTotal, shipping_method: shippingMethod, shipping_cost: shippingCost, buyer_email: email, buyer_name: name, buyer_phone: phone, address: [addr1, addr2, city, stateP, zip, country].filter((x) => String(x).trim()).join(", "), payment_method: method === "card" ? ("card:" + brand + ":" + digits.slice(-4)) : method, payment_status: pstat, note: "Items: " + items.map((x) => x.it.title + " x" + x.qty).join("; ") + " | Payment: " + method + " (" + pstat + ")" }) });
       const j = await r.json();
       if (j.ok) { localStorage.setItem("kara_cart", "[]"); setCart([]); setDone(String(j.id || j.order_id || "")); }
       else setMsg(j.error || "Order failed.");
@@ -74,7 +77,11 @@ export default function Checkout() {
                 <button onClick={() => rm(x.id)} className="text-xs text-rose-500 underline">remove</button>
               </div>
             ))}
-            <div className="mt-4 flex justify-between text-lg font-bold"><span>Total</span><span className="text-amber-700">${total.toFixed(2)}</span></div>
+            <div className="mt-4 space-y-2 border-t border-slate-200 pt-3">
+            <div className="flex justify-between text-sm"><span>Subtotal</span><span>${total.toFixed(2)}</span></div>
+            <div className="flex justify-between text-sm"><span>Shipping ({shippingMethod === "express" ? "Express" : "Standard"})</span><span>${shippingCost.toFixed(2)}</span></div>
+            <div className="flex justify-between text-lg font-bold border-t border-slate-200 pt-2"><span>Total</span><span className="text-amber-700">${finalTotal.toFixed(2)}</span></div>
+          </div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5">
             <p className="font-bold"><span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white align-middle">2</span>Delivery address</p>
@@ -174,7 +181,23 @@ export default function Checkout() {
 </select></div>
             </div>
             <p className={"mt-2 " + lbl}>Street address</p><input value={addr1} onChange={(e) => setAddr1(e.target.value)} className={"mt-1 " + inp} placeholder="123 Market St" /><p className={"mt-2 " + lbl}>Apt, suite, unit (optional)</p><input value={addr2} onChange={(e) => setAddr2(e.target.value)} className={"mt-1 " + inp} /><div className="mt-2 grid grid-cols-2 gap-3"><div><p className={lbl}>City</p><input value={city} onChange={(e) => setCity(e.target.value)} className={"mt-1 " + inp} /></div><div><p className={lbl}>State / Province</p><input value={stateP} onChange={(e) => setStateP(e.target.value)} className={"mt-1 " + inp} /></div></div><p className={"mt-2 " + lbl}>Postal code</p><input value={zip} onChange={(e) => setZip(e.target.value)} className={"mt-1 " + inp} />
-            <p className={"mt-3 " + lbl}><span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white align-middle">3</span>Payment</p><div className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-3"><p className="text-sm font-bold text-emerald-900">Recommended - Pay now with Stripe (live escrow)</p><p className="mt-1 text-[11px] text-emerald-800">Amazon/Shopify-grade hosted checkout: cards, wallets, 3-D Secure. Money held in escrow until you confirm delivery.</p><Link href="/karakata/express" className="mt-2 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-500">Pay securely with Stripe →</Link></div>
+            <p className={"mt-4 " + lbl}><span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white align-middle">3</span>Shipping Method</p>
+          <div className="mt-2 space-y-2">
+            {["standard", "express"].map((opt) => (
+              <label key={opt} className={"flex items-center justify-between rounded-lg border-2 p-3 cursor-pointer transition " + (shippingMethod === opt ? "border-emerald-500 bg-emerald-50" : "border-slate-200 hover:border-emerald-300")}>
+                <div className="flex items-center gap-3">
+                  <input type="radio" name="shipping" checked={shippingMethod === opt} onChange={() => setShippingMethod(opt)} className="h-4 w-4 text-emerald-600" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">{opt === "standard" ? "Standard Delivery (3-5 days)" : "Express Delivery (1-2 days)"}</p>
+                    <p className="text-[10px] text-slate-500">{opt === "standard" ? "Reliable partner logistics" : "Priority handling & tracking"}</p>
+                  </div>
+                </div>
+                <span className="text-sm font-bold text-slate-900">${opt === "express" ? "15.00" : "5.00"}</span>
+              </label>
+            ))}
+          </div>
+
+          <p className={"mt-4 " + lbl}><span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white align-middle">4</span>Payment</p><div className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-3"><p className="text-sm font-bold text-emerald-900">Recommended - Pay now with Stripe (live escrow)</p><p className="mt-1 text-[11px] text-emerald-800">Amazon/Shopify-grade hosted checkout: cards, wallets, 3-D Secure. Money held in escrow until you confirm delivery.</p><Link href="/karakata/express" className="mt-2 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-500">Pay securely with Stripe →</Link></div>
             <div className="mt-1 grid grid-cols-2 gap-2">
               {[{ k: "card", t: "💳 Card", s: "Visa · Mastercard · Amex · Discover" }, { k: "paypal", t: "🅿️ PayPal", s: "Buyer protection included" }, { k: "cod", t: "🚚 Pay on delivery", s: "Select markets only" }, { k: "bank", t: "🏦 Bank transfer", s: "Orders $500+ / B2B" }].map((m) => (
                 <button key={m.k} onClick={() => setMethod(m.k)} className={"rounded-lg border-2 p-2 text-left text-xs font-bold " + (method === m.k ? "border-emerald-500 bg-emerald-50" : "border-slate-200 hover:border-emerald-300")}>
