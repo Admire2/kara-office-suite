@@ -13,6 +13,22 @@ export default function Checkout() {
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [cnum, setCnum] = useState(""); const [cname, setCname] = useState(""); const [cexp, setCexp] = useState(""); const [ccvc, setCcvc] = useState("");
   const [msg, setMsg] = useState(""); const [busy, setBusy] = useState(false); const [done, setDone] = useState("");
+  // Local Currency Converter (Phase 1: Fixed Rates, Phase 2: Live API)
+  const CURRENCY_MAP: Record<string, { symbol: string; rate: number; name: string }> = {
+    "Nigeria": { symbol: "?", rate: 1500, name: "Naira" },
+    "Kenya": { symbol: "KSh", rate: 130, name: "Shilling" },
+    "Ghana": { symbol: "?", rate: 15, name: "Cedi" },
+    "South Africa": { symbol: "R", rate: 19, name: "Rand" },
+    "United States": { symbol: "$", rate: 1, name: "USD" },
+    "United Kingdom": { symbol: "�", rate: 0.79, name: "GBP" },
+  };
+
+  const getLocalCurrency = (usdAmount: number, countryCode: string) => {
+    const currency = CURRENCY_MAP[countryCode] || CURRENCY_MAP["United States"];
+    const localAmount = (usdAmount * currency.rate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return { symbol: currency.symbol, amount: localAmount, name: currency.name };
+  };
+
   useEffect(() => {
     try { const raw = localStorage.getItem("kara_cart") || "[]"; const arr = JSON.parse(raw); setCart(Array.isArray(arr) ? (() => { const mm: Record<string, any> = {}; arr.forEach((x: any) => { const rid = x.id != null ? x.id : (x.listing_id != null ? x.listing_id : (x.slug || x.key || x.title)); const k = String(rid); const price = x.price_usd != null ? x.price_usd : (x.price != null ? x.price : (x.it && x.it.price_usd)); const it = x.it || { id: rid, title: x.title, price_usd: price, seller_id: x.seller_id, category: x.category, image_url: x.image_url }; if (mm[k]) { mm[k].qty = (mm[k].qty || 1) + (x.qty || 1); } else { mm[k] = { ...x, id: rid, qty: x.qty || 1, it: { ...x.it, title: it.title, price_usd: price, price: price, seller_id: it.seller_id }, title: it.title, price_usd: price, price: price }; } }); return Object.values(mm); })() : []); } catch (e) {}
     
@@ -22,7 +38,18 @@ export default function Checkout() {
   }, []);
   const items = cart.map((c) => ({ ...c, it: listings.find((l: any) => String(l.id) === String(c.id)) || c.it })).filter((x) => x.it);
   const total = items.reduce((a, x) => a + Number(x.it.price_usd || 0) * x.qty, 0);
-  const shippingCost = shippingMethod === "express" ? 15.00 : 5.00;
+  // Dynamic shipping based on seller's rates and buyer's country
+  const firstItem = items[0]?.it || {};
+  const sellerCountry = (firstItem.seller_country || "Nigeria").toLowerCase();
+  const buyerCountry = country.toLowerCase();
+  const isDomestic = buyerCountry === sellerCountry;
+  
+  // Use seller-defined rates, fallback to 5/25 if not set
+  const domesticRate = Number(firstItem.domestic_shipping) || 5.00;
+  const intlRate = Number(firstItem.international_shipping) || 25.00;
+  
+  const shippingCost = items.length > 0 ? (isDomestic ? domesticRate : intlRate) : 0;
+  const shippingLabel = items.length > 0 ? (isDomestic ? `Domestic (${sellerCountry})` : "International") : "None";
   const finalTotal = total + shippingCost;
   const setQty = (id: any, q: number) => { const nx = q < 1 ? cart.filter((c) => String(c.id) !== String(id)) : cart.map((c) => (String(c.id) === String(id) ? { ...c, qty: q } : c)); setCart(nx); localStorage.setItem("kara_cart", JSON.stringify(nx)); };
   const rm = (id: any) => { const i = cart.findIndex((c) => String(c.id) === String(id)); if (i < 0) return; const nx = [...cart]; nx.splice(i, 1); setCart(nx); localStorage.setItem("kara_cart", JSON.stringify(nx)); };
@@ -43,7 +70,7 @@ export default function Checkout() {
     const pstat = method === "cod" || method === "bank" ? "pay_at_fulfillment" : "pending_gateway";
     try {
       const first = items[0];
-      if (method === "card") { const pr = await fetch("/api/karakata/pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items, email: email, name: name, phone: phone, address: [addr1, addr2, city, stateP, zip, country].filter((x) => String(x).trim()).join(", "), origin: window.location.origin }) }); const pj = await pr.json(); if (pj && pj.url) { window.location.href = pj.url; return; } setMsg(pj && pj.error ? String(pj.error) : "Stripe session failed - use Pay now with Stripe above."); return; } const r = await fetch("/api/karakata/order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items.map((x) => ({ id: x.id, listing_id: x.id, seller_id: x.it.seller_id, qty: x.qty, unit_price: x.it.price_usd, price_usd: x.it.price_usd, title: x.it.title })), listing_id: first.id, seller_id: first.it.seller_id, qty: first.qty, unit_price: first.it.price_usd, total: finalTotal, shipping_method: shippingMethod, shipping_cost: shippingCost, buyer_email: email, buyer_name: name, buyer_phone: phone, address: [addr1, addr2, city, stateP, zip, country].filter((x) => String(x).trim()).join(", "), payment_method: method === "card" ? ("card:" + brand + ":" + digits.slice(-4)) : method, payment_status: pstat, note: "Items: " + items.map((x) => x.it.title + " x" + x.qty).join("; ") + " | Payment: " + method + " (" + pstat + ")" }) });
+      if (method === "card") { const pr = await fetch("/api/karakata/pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items, email: email, name: name, phone: phone, address: [addr1, addr2, city, stateP, zip, country].filter((x) => String(x).trim()).join(", "), origin: window.location.origin }) }); const pj = await pr.json(); if (pj && pj.url) { window.location.href = pj.url; return; } setMsg(pj && pj.error ? String(pj.error) : "Stripe session failed - use Pay now with Stripe above."); return; } const r = await fetch("/api/karakata/order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items.map((x) => ({ id: x.id, listing_id: x.id, seller_id: x.it.seller_id, qty: x.qty, unit_price: x.it.price_usd, price_usd: x.it.price_usd, title: x.it.title })), listing_id: first.id, seller_id: first.it.seller_id, qty: first.qty, unit_price: first.it.price_usd, total: finalTotal, shipping_method: shippingLabel, shipping_cost: shippingCost, buyer_email: email, buyer_name: name, buyer_phone: phone, address: [addr1, addr2, city, stateP, zip, country].filter((x) => String(x).trim()).join(", "), payment_method: method === "card" ? ("card:" + brand + ":" + digits.slice(-4)) : method, payment_status: pstat, note: "Items: " + items.map((x) => x.it.title + " x" + x.qty).join("; ") + " | Payment: " + method + " (" + pstat + ")" }) });
       const j = await r.json();
       if (j.ok) { localStorage.setItem("kara_cart", "[]"); setCart([]); setDone(String(j.id || j.order_id || "")); }
       else setMsg(j.error || "Order failed.");
