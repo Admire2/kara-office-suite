@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
@@ -8,10 +8,8 @@ const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_
 export default function StoreBuilder() {
   const [mode, setMode] = useState<"select" | "ai-form" | "ai-result" | "manual">("select");
   
-  // Form State
   const [formData, setFormData] = useState({ what: "", vibe: "", city: "Lagos", country: "Nigeria", email: "" });
   
-  // Generated Store State (Editable)
   const [store, setStore] = useState({
     title: "KaraKata Luxe",
     tagline: "Luxury Bags, Crafted in Lagos",
@@ -24,24 +22,26 @@ export default function StoreBuilder() {
 
   const [uploadingId, setUploadingId] = useState<number | null>(null);
 
-  // Handle AI Generation (Mocked for now, connects to your AI later)
   const handleGenerate = () => {
-    // In a real app, this calls your AI API. For now, we just switch to result mode with default data.
-    setStore(prev => ({
-      ...prev,
-      title: formData.vibe ? `${formData.vibe} Store` : "My Luxury Store",
-      description: `Welcome to ${formData.what || "our store"} in ${formData.city}. We offer the finest craftsmanship.`
-    }));
+    setStore({
+      title: formData.vibe ? formData.vibe + " Store" : (formData.what || "My Store"),
+      tagline: (formData.what || "Quality Products") + ", Crafted in " + (formData.city || "Lagos"),
+      description: "Welcome to " + (formData.what || "our store") + " in " + (formData.city || "Lagos") + ", " + (formData.country || "Nigeria") + ". We offer the finest craftsmanship.",
+      products: [
+        { id: 1, name: "Premium Product 1", price: "99", desc: "High-quality " + (formData.what || "product") + " with excellent craftsmanship.", image: "" },
+        { id: 2, name: "Premium Product 2", price: "149", desc: "Handcrafted " + (formData.what || "item") + " made with care.", image: "" },
+        { id: 3, name: "Premium Product 3", price: "199", desc: "Luxury " + (formData.what || "product") + " for discerning customers.", image: "" },
+      ]
+    });
     setMode("ai-result");
   };
 
-  // Handle Image Upload to Supabase
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, productId: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
     setUploadingId(productId);
-    const path = `store-${Date.now()}-${file.name}`;
+    const path = "store-" + Date.now() + "-" + file.name;
     
     const { error } = await sb.storage.from("kara").upload(path, file, { upsert: true });
     
@@ -57,7 +57,6 @@ export default function StoreBuilder() {
     setUploadingId(null);
   };
 
-  // Update Store Fields
   const updateField = (field: string, value: string) => setStore(prev => ({ ...prev, [field]: value }));
   const updateProduct = (id: number, field: string, value: string) => {
     setStore(prev => ({
@@ -66,7 +65,61 @@ export default function StoreBuilder() {
     }));
   };
 
-  // --- RENDER: MODE SELECTOR ---
+  
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      // Save seller profile
+      const { data: sellerData, error: sellerError } = await sb
+        .from("kara_sellers")
+        .insert({
+          shop_name: store.title,
+          category: formData.what || "General",
+          city: formData.city,
+          country: formData.country,
+          email: formData.email,
+          description: store.description,
+          avg_rating: 0,
+          review_count: 0
+        })
+        .select()
+        .single();
+
+      if (sellerError) {
+        console.error("Error saving seller:", sellerError);
+        alert("Error saving store: " + sellerError.message);
+        setPublishing(false);
+        return;
+      }
+
+      // Save products
+      const productPromises = store.products.map(product => 
+        sb.from("kara_listings").insert({
+          title: product.name,
+          description: product.desc,
+          price_usd: parseFloat(product.price) || 0,
+          category: formData.what || "General",
+          seller_id: sellerData.id,
+          seller_email: formData.email,
+          image_url: product.image || "",
+          status: "active"
+        })
+      );
+
+      await Promise.all(productPromises);
+
+      setPublished(true);
+      console.log("Store published successfully!");
+    } catch (error) {
+      console.error("Publish error:", error);
+      alert("Error publishing store: " + error.message);
+    }
+    setPublishing(false);
+  };
+
   if (mode === "select") {
     return (
       <main className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6">
@@ -75,13 +128,13 @@ export default function StoreBuilder() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
           <button onClick={() => setMode("ai-form")} className="p-8 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 transition text-left border border-emerald-400/30">
-            <div className="text-3xl mb-4">?</div>
+            <div className="text-3xl mb-4">&#10024;</div>
             <h2 className="text-2xl font-bold mb-2">Build with AI</h2>
             <p className="text-emerald-100 text-sm">Describe your business. Our AI designs your storefront, writes your copy, and stocks 5 starter products.</p>
           </button>
           
           <Link href="/karakata/seller" className="p-8 rounded-2xl bg-slate-800 hover:bg-slate-700 transition text-left border border-slate-700 block">
-            <div className="text-3xl mb-4">????</div>
+            <div className="text-3xl mb-4">&#128736;</div>
             <h2 className="text-2xl font-bold mb-2">Build Manually</h2>
             <p className="text-slate-400 text-sm">You have full control. Upload your own photos, write your own descriptions, and set your own prices step-by-step.</p>
           </Link>
@@ -90,13 +143,12 @@ export default function StoreBuilder() {
     );
   }
 
-  // --- RENDER: AI FORM (Image 1) ---
   if (mode === "ai-form") {
     return (
       <main className="min-h-screen bg-slate-900 text-white p-6 flex flex-col items-center">
-        <Link href="/" className="self-start text-cyan-400 hover:underline mb-8">? Back to market</Link>
+        <Link href="/karakata" className="self-start text-cyan-400 hover:underline mb-8">&#8592; Back to market</Link>
         <div className="w-full max-w-2xl space-y-6">
-          <h1 className="text-3xl font-bold">KaraKata StoreBuilder <span className="text-emerald-400">?</span></h1>
+          <h1 className="text-3xl font-bold">KaraKata StoreBuilder <span className="text-emerald-400">&#10024;</span></h1>
           <p className="text-slate-400">Describe your business - our AI designs your storefront, writes your copy, and stocks 5 starter products.</p>
           
           <div className="space-y-4">
@@ -110,26 +162,64 @@ export default function StoreBuilder() {
           </div>
 
           <button onClick={handleGenerate} className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold py-4 rounded-lg text-lg transition">
-            ? Design my store with AI
+            &#10024; Design my store with AI
           </button>
         </div>
       </main>
     );
   }
 
-  // --- RENDER: EDITABLE RESULT (Images 2 & 3 but interactive) ---
+  
+  if (published) {
+    return (
+      <main className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6">
+        <div className="text-center max-w-2xl">
+          <div className="text-6xl mb-6">??</div>
+          <h1 className="text-4xl font-bold mb-4">Your Store is Live!</h1>
+          <p className="text-xl text-slate-300 mb-8">
+            <strong>{store.title}</strong> has been published to KaraKata Marketplace.
+            Buyers can now find your products and place orders.
+          </p>
+          <div className="bg-slate-800 rounded-xl p-6 mb-8 text-left">
+            <h3 className="font-bold mb-3">Store Details:</h3>
+            <p className="text-slate-400 mb-2">Location: {formData.city}, {formData.country}</p>
+            <p className="text-slate-400 mb-2">Products: {store.products.length} items listed</p>
+            <p className="text-slate-400">Category: {formData.what || "General"}</p>
+          </div>
+          <div className="flex gap-4 justify-center">
+            <Link href="/karakata" className="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold">
+              View on Marketplace
+            </Link>
+            <button 
+              onClick={() => { setPublished(false); setMode("select"); }}
+              className="px-6 py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-bold"
+            >
+              Build Another Store
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+
   return (
     <main className="min-h-screen bg-slate-900 text-white p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <Link href="/" className="text-cyan-400 hover:underline">? Back to market</Link>
+          <Link href="/karakata" className="text-cyan-400 hover:underline">&#8592; Back to market</Link>
           <div className="flex gap-3">
-            <button onClick={() => setMode("ai-form")} className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-bold">? Redesign</button>
-            <button className="px-6 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold">??? Publish my store live</button>
+            <button onClick={() => setMode("ai-form")} className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-bold">&#8635; Redesign</button>
+            <button 
+            onClick={handlePublish} 
+            disabled={publishing || published}
+            className="px-6 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {published ? "? Published!" : publishing ? "Publishing..." : " Publish my store live"}
+          </button>
           </div>
         </div>
 
-        {/* Editable Header */}
         <div className="bg-blue-600 rounded-2xl p-8 mb-8">
           <input value={store.title} onChange={e => updateField("title", e.target.value)} className="w-full bg-transparent text-3xl font-bold text-white border-b border-blue-400/50 focus:border-white outline-none mb-2" />
           <input value={store.tagline} onChange={e => updateField("tagline", e.target.value)} className="w-full bg-transparent text-xl text-blue-100 border-b border-blue-400/50 focus:border-white outline-none mb-4" />
@@ -138,11 +228,9 @@ export default function StoreBuilder() {
 
         <textarea value={store.description} onChange={e => updateField("description", e.target.value)} rows={3} className="w-full bg-transparent text-lg text-slate-300 mb-8 border-b border-slate-700 focus:border-emerald-500 outline-none resize-none" />
 
-        {/* Editable Products Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {store.products.map((p) => (
             <div key={p.id} className="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-emerald-500/50 transition">
-              {/* Image Upload Area */}
               <div className="relative h-48 bg-slate-900 rounded-lg mb-4 flex items-center justify-center overflow-hidden group">
                 {p.image ? (
                   <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
@@ -150,13 +238,12 @@ export default function StoreBuilder() {
                   <span className="text-slate-600 text-sm">No image uploaded</span>
                 )}
                 <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center cursor-pointer">
-                  <span className="text-white font-bold text-sm">??? Upload Photo</span>
+                  <span className="text-white font-bold text-sm">&#128247; Upload Photo</span>
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, p.id)} />
                 </label>
                 {uploadingId === p.id && <div className="absolute inset-0 bg-black/80 flex items-center justify-center text-white">Uploading...</div>}
               </div>
 
-              {/* Editable Fields */}
               <input value={p.name} onChange={e => updateProduct(p.id, "name", e.target.value)} className="w-full bg-transparent text-xl font-bold text-white border-b border-slate-700 focus:border-emerald-500 outline-none mb-2" />
               <textarea value={p.desc} onChange={e => updateProduct(p.id, "desc", e.target.value)} rows={2} className="w-full bg-transparent text-sm text-slate-400 mb-4 border-b border-slate-700 focus:border-emerald-500 outline-none resize-none" />
               <div className="flex items-center gap-2">

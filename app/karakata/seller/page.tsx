@@ -47,6 +47,11 @@ export default function SellerCenter() {
     <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
       <Link href="/karakata" className="text-sm font-bold text-emerald-700 hover:underline">← Back to KaraKata Market</Link>
       <h1 className="mt-3 text-3xl font-bold">🧑‍💼 Seller Center</h1>
+      
+    <div className="mt-4 flex gap-3 flex-wrap">
+      <Link href="/karakata/seller/orders" className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200">?? Orders</Link>
+      <Link href="/karakata/seller/messages" className="rounded-lg bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-200">?? Messages</Link>
+    </div>
       <p className="mt-1 text-sm text-slate-600">Register your contact, upload pictures, link your products and services - Amazon-style, but free to start and AI-empowered.</p>
       <p className="mt-2 inline-block rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-bold text-cyan-700">🤖 Kara - onboarding agent: automatic welcome email + day-2 nudge for every new seller</p>
             <div className="mt-6 rounded-xl border-2 border-amber-300 bg-amber-50 p-5">

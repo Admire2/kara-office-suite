@@ -1,4 +1,5 @@
 import Link from "next/link";
+import KaraKataAuthBar from "@/components/KaraKataAuthBar";
 const SERVICES = [
   { name: "Procedure Explainer", href: "/suite/ilera/procedures", cr: "10 cr", desc: "Paste any procedure name — get cost ranges, insurance rules, risks, prep steps and 5 questions for your doctor. Know what you are walking into.", tags: ["MRI", "CT", "Colonoscopy", "Capsule Endoscopy"] },
   { name: "iLera - AI Healthcare Companion", href: "/suite/ilera", cr: "10 cr", desc: "Symptom story + vitals + prior care: safety check, patterns, bloodwork to request, Prevention Radar, doctor questions.", tags: ["Symptoms", "Vitals", "Pre-Visit Read"] },
@@ -11,6 +12,7 @@ const SERVICES = [
 ];
 export default function HealthcareSuite() {
   return (
+    <div className="flex justify-end p-4 bg-slate-900 border-b border-slate-800"><KaraKataAuthBar /></div>
     <main className="min-h-screen bg-slate-950 p-6 text-white">
       <Link href="/suite" className="text-cyan-400 hover:underline text-sm">← Back to Suite</Link>
       <h1 className="mt-3 text-4xl font-bold">🩺 Healthcare Suite</h1>

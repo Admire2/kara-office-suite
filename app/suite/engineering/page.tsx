@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import KaraKataAuthBar from "@/components/KaraKataAuthBar";
 import WalletBar from "@/components/WalletBar";
 
 const SUITES = [
@@ -11,6 +12,7 @@ const SUITES = [
 
 export default function EngineeringSuite() {
   return (
+    <div className="flex justify-end p-4 bg-slate-900 border-b border-slate-800"><KaraKataAuthBar /></div>
     <main className="min-h-screen bg-slate-950 text-white p-8">
       <WalletBar />
       <div className="max-w-5xl mx-auto">

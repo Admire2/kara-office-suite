@@ -1,7 +1,33 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import KaraKataAuthBar from "@/components/KaraKataAuthBar";
 import { createClient } from "@supabase/supabase-js";
+
+// Global Currency Converter
+const CURRENCY_MAP: Record<string, { symbol: string; rate: number; name: string; locale: string }> = {
+  "Nigeria": { symbol: "?", rate: 1500, name: "Naira", locale: "en-NG" },
+  "Kenya": { symbol: "KSh", rate: 130, name: "Shilling", locale: "en-KE" },
+  "Ghana": { symbol: "?", rate: 15, name: "Cedi", locale: "en-GH" },
+  "South Africa": { symbol: "R", rate: 19, name: "Rand", locale: "en-ZA" },
+  "Morocco": { symbol: "MAD", rate: 10, name: "Dirham", locale: "fr-MA" },
+  "Taiwan": { symbol: "NT$", rate: 32, name: "Dollar", locale: "zh-TW" },
+  "Sweden": { symbol: "kr", rate: 10.5, name: "Krona", locale: "sv-SE" },
+  "United States": { symbol: "$", rate: 1, name: "USD", locale: "en-US" },
+  "United Kingdom": { symbol: "�", rate: 0.79, name: "GBP", locale: "en-GB" },
+};
+
+const convertToLocalCurrency = (usdAmount: number, countryCode: string) => {
+  const currency = CURRENCY_MAP[countryCode] || CURRENCY_MAP["United States"];
+  const localAmount = usdAmount * currency.rate;
+  return {
+    symbol: currency.symbol,
+    amount: localAmount.toLocaleString(currency.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    name: currency.name,
+    original: usdAmount.toFixed(2)
+  };
+};
+
 
 const TAXONOMY: any[] = [
   { name: "Fashion & Clothing", icon: "👗", subs: ["Men", "Women", "Unisex", "Children", "Teenagers"] },
@@ -23,6 +49,13 @@ const TAXONOMY: any[] = [
 function useCountdown() {
   const [left, setLeft] = useState("00:00:00");
   useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await sb.auth.getUser();
+      setUser(user);
+      if (user?.email) setEmail(user.email);
+    };
+    getUser();
+  
     const tick = () => {
       const now = new Date();
       const end = new Date(now);
@@ -45,6 +78,7 @@ export default function Market() {
   const [term, setTerm] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [email, setEmail] = useState("");
+  const [user, setUser] = useState<any>(null);
   const left = useCountdown();
 
   useEffect(() => {
@@ -89,24 +123,7 @@ export default function Market() {
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
-      <header className="bg-slate-900 px-4 py-3 text-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3">
-          <Link href="/karakata" className="text-xl font-bold">KaraKata</Link>
-          <form className="flex min-w-[220px] flex-1" onSubmit={(e) => { e.preventDefault(); setTerm(q.trim()); }}>
-            <input value={q} onChange={(e) => { setQ(e.target.value); if (e.target.value === "") setTerm(""); }} placeholder="Search KaraKata - products & services" className="w-full rounded-l-lg bg-white px-4 py-2 text-sm text-slate-900 outline-none" />
-            <button type="submit" className="rounded-r-lg bg-amber-400 px-4 text-slate-900 hover:bg-amber-300" aria-label="Search">🔍</button>
-          </form>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link href="/karakata/sellers" className="hover:text-amber-300">Sellers</Link>
-            <Link href="/karakata/build" className="font-bold text-amber-400 hover:text-amber-300">🏗️ Build my store free</Link>
-            <Link href="/auth" className="text-center leading-tight hover:text-amber-300">
-              <span className="block text-[10px] text-slate-300">{email ? "Hello," : "Hello, sign in"}</span>
-              <span className="block text-sm font-bold">{email ? email.split("@")[0] : "Account & Lists"}</span>
-            </Link>
-            <Link href="/karakata/checkout" className="rounded bg-amber-400 px-4 py-2 font-bold text-slate-900 hover:bg-amber-300">🛒 Cart ({cartCount})</Link>
-          </nav>
-        </div>
-      </header>
+      {/* Header moved to Global Layout */}
 
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-2">
