@@ -102,8 +102,9 @@ function WaitlistButton({ toolName }: { toolName: string }) {
 
 export default function BusinessSuite() {
   return (
-    <div className="flex justify-end p-4 bg-slate-900 border-b border-slate-800"><KaraKataAuthBar /></div>
-    <main className="min-h-screen bg-slate-950 text-white p-8">
+    <>
+      <div className="flex justify-end p-4 bg-slate-900 border-b border-slate-800"><KaraKataAuthBar /></div>
+      <main className="min-h-screen bg-slate-950 text-white p-8">
       <WalletBar />
       <div className="max-w-6xl mx-auto">
 
@@ -158,5 +159,6 @@ export default function BusinessSuite() {
         </div>
       </div>
     </main>
+    </>
   );
 }

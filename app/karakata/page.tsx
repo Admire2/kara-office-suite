@@ -49,12 +49,8 @@ const TAXONOMY: any[] = [
 function useCountdown() {
   const [left, setLeft] = useState("00:00:00");
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await sb.auth.getUser();
-      setUser(user);
-      if (user?.email) setEmail(user.email);
-    };
-    getUser();
+    
+    
   
     const tick = () => {
       const now = new Date();
@@ -77,8 +73,8 @@ export default function Market() {
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const [cartCount, setCartCount] = useState(0);
-  const [email, setEmail] = useState("");
-  const [user, setUser] = useState<any>(null);
+  
+  
   const left = useCountdown();
 
   useEffect(() => {
